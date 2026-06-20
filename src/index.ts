@@ -23,6 +23,8 @@ export { FxRate, FxBoard, toMillis } from "./fx.js";
 export type { FxMetadata, ConvertOptions, FxConversion, Duration } from "./fx.js";
 
 export { Markup } from "./markup.js";
+export { MarkupSchedule } from "./schedule.js";
+export type { MarkupTier, TierMode, TieredPrice, PriceOptions } from "./schedule.js";
 export { Quote } from "./quote.js";
 export type { QuoteOptions, QuoteJSON } from "./quote.js";
 export { Trade } from "./trade.js";

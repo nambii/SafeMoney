@@ -52,6 +52,24 @@ export class Markup {
     return new Markup(0n, 1n, "0bps");
   }
 
+  /**
+   * Build a markup from an exact rational fraction `num/den` (reduced
+   * automatically). Used to represent blended margins, e.g. the weighted
+   * average produced by a tiered {@link MarkupSchedule}.
+   */
+  static fromFraction(num: bigint, den: bigint, label?: string): Markup {
+    if (den === 0n) throw new RangeError("Markup denominator must be non-zero.");
+    if (den < 0n) {
+      num = -num;
+      den = -den;
+    }
+    const g = gcd(num < 0n ? -num : num, den);
+    const n = g > 1n ? num / g : num;
+    const d = g > 1n ? den / g : den;
+    const bps = Math.round((Number(n) / Number(d)) * 10_000 * 1e6) / 1e6;
+    return new Markup(n, d, label ?? `${bps}bps`);
+  }
+
   /** The markup fraction as `num/den` (house's take per unit). */
   fraction(): { num: bigint; den: bigint } {
     return { num: this.num, den: this.den };
@@ -70,4 +88,11 @@ export class Markup {
   toString(): string {
     return this.label;
   }
+}
+
+function gcd(a: bigint, b: bigint): bigint {
+  while (b !== 0n) {
+    [a, b] = [b, a % b];
+  }
+  return a < 0n ? -a : a;
 }

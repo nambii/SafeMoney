@@ -255,6 +255,38 @@ house's favour. `Quote.forBuyAmount` fixes the payout instead of the pay-in.
 Expired quotes throw `QuoteExpiredError` on `accept()`. `Trade` is a pure value
 object — lifecycle, persistence and payment rails stay in your application.
 
+### Tiered / progressive margins
+
+A pair often has margins that vary by deal size. `MarkupSchedule` holds margin
+tiers (each a `Markup` in bps or %) with thresholds in the **base currency**, and
+combines them either **progressively** (tax-bracket style — each slice of the
+amount is margined at its own tier, blended into one effective margin) or `flat`
+(the whole amount uses the tier it falls into). It resolves the effective margin,
+the resultant client rate, and the converted amount in one call.
+
+```ts
+import { MarkupSchedule, Markup, Money, FxRate } from "safemoney";
+
+const schedule = MarkupSchedule.of("AUD", [
+  { upTo: "10000", markup: Markup.bps(50) }, //      0 – 10k @ 50 bps
+  { upTo: "50000", markup: Markup.bps(30) }, //    10k – 50k @ 30 bps
+  { markup: Markup.bps(20) },                //       50k+   @ 20 bps (open)
+]); // mode defaults to "progressive"
+
+// 70k → 10k@50 + 40k@30 + 20k@20 = blended 30 bps
+schedule.effectiveMarkup(Money.of("70000", "AUD")).asBps(); // 30
+
+const cost = FxRate.of("AUD", "USD", "0.6543", { source: "JPM" });
+const priced = schedule.price(cost, Money.of("70000", "AUD"));
+priced.markup.asBps(); // 30
+priced.rate;           // AUD/USD @ 0.6523371429  (resultant client rate, reusable)
+priced.amount;         // 45663.60 USD            (converted payout)
+priced.margin;         // 137.40 USD              (house revenue)
+
+// Flat mode instead: whole amount at the tier it lands in
+MarkupSchedule.of("AUD", tiers, { mode: "flat" });
+```
+
 ## Formatting
 
 `format()` uses `Intl.NumberFormat` and hands it the exact decimal string, so no
