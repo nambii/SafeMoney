@@ -1,4 +1,5 @@
 import type { Money } from "./money.js";
+import { InvalidAmountError } from "./errors.js";
 
 /** Options for {@link formatMoney} / {@link Money} display. */
 export interface FormatOptions {
@@ -49,6 +50,60 @@ export function formatMoney(money: Money, options: FormatOptions = {}): string {
   } catch {
     return fallbackFormat(money, options);
   }
+}
+
+/**
+ * Normalize a localized, human-typed amount into a plain decimal string
+ * ("-1234.56"). Strips currency symbols/codes and grouping separators, maps the
+ * locale's digits and decimal separator, and treats accounting parentheses as
+ * negative. The inverse of the numeric side of {@link formatMoney}.
+ *
+ * Returns a string suitable for `Money.of`; throws {@link InvalidAmountError}
+ * if no digits are found.
+ */
+export function normalizeLocaleNumber(text: string, locale?: string): string {
+  const { group, decimal, digits } = localeNumberSymbols(locale);
+
+  let s = text.normalize("NFKC").trim();
+  const negative = /[(]/.test(s) || /[-−]/.test(s);
+
+  // Map locale-specific digits (e.g. Arabic-Indic) back to ASCII.
+  if (digits.size > 0) {
+    s = s.replace(/./gu, (ch) => digits.get(ch) ?? ch);
+  }
+  // Remove grouping separators, then normalize the decimal separator to ".".
+  if (group) s = s.split(group).join("");
+  if (decimal && decimal !== ".") s = s.split(decimal).join(".");
+
+  // Drop everything that isn't a digit or decimal point (symbol, code, spaces).
+  const cleaned = s.replace(/[^0-9.]/g, "");
+  if (cleaned === "" || cleaned === ".") {
+    throw new InvalidAmountError(`Could not parse a number from: "${text}"`);
+  }
+  return (negative ? "-" : "") + cleaned;
+}
+
+// Discover a locale's grouping/decimal separators and digit glyphs via Intl.
+function localeNumberSymbols(locale?: string): {
+  group: string;
+  decimal: string;
+  digits: Map<string, string>;
+} {
+  const nf = new Intl.NumberFormat(locale);
+  let group = "";
+  let decimal = ".";
+  for (const part of nf.formatToParts(12345.6)) {
+    if (part.type === "group") group = part.value;
+    else if (part.type === "decimal") decimal = part.value;
+  }
+
+  const digits = new Map<string, string>();
+  const plain = new Intl.NumberFormat(locale, { useGrouping: false });
+  for (let d = 0; d <= 9; d++) {
+    const glyph = plain.format(d);
+    if (glyph !== String(d)) digits.set(glyph, String(d));
+  }
+  return { group, decimal, digits };
 }
 
 // Used for currencies Intl doesn't know about (custom/registered codes).

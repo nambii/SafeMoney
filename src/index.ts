@@ -17,10 +17,12 @@
 export { Money } from "./money.js";
 export type { MoneyJSON, MoneyOptions } from "./money.js";
 
-export { FxRate, FxBoard } from "./fx.js";
-export type { FxMetadata, ConvertOptions, FxConversion } from "./fx.js";
+export { Portfolio } from "./portfolio.js";
 
-export { formatMoney } from "./format.js";
+export { FxRate, FxBoard, toMillis } from "./fx.js";
+export type { FxMetadata, ConvertOptions, FxConversion, Duration } from "./fx.js";
+
+export { formatMoney, normalizeLocaleNumber } from "./format.js";
 export type { FormatOptions } from "./format.js";
 
 export { RoundingMode, isRoundingMode } from "./rounding.js";
@@ -42,6 +44,7 @@ export {
   CurrencyMismatchError,
   RoundingNecessaryError,
   FxRateMismatchError,
+  StaleRateError,
   AllocationError,
 } from "./errors.js";
 

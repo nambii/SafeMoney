@@ -91,13 +91,27 @@ Money.of("100.00", "USD").allocate([70, 30]); // weighted split
 Money.of("10.00", "USD").split(3);            // ["3.34", "3.33", "3.33"]
 ```
 
-### Comparison
+### Comparison & aggregation
 
 ```ts
 Money.of("10.00", "USD").equals(Money.of("10.000", "USD")); // true (value, not scale)
 a.greaterThan(b); a.lessThanOrEqual(b); a.compare(b);       // -1 | 0 | 1
 a.isZero(); a.isPositive(); a.isNegative();
 a.min(b); a.max(b);
+
+Money.sum([a, b, c]);        // currency-safe sum (pass a code for the empty case)
+Money.min(list); Money.max(list);
+```
+
+### Parsing & cash rounding
+
+```ts
+Money.parse("$1,234.56", "USD");                       // 1234.56 USD (inverse of format)
+Money.parse("1.234,56 €", "EUR", { locale: "de-DE" }); // 1234.56 EUR
+Money.parse("(5.00)", "USD");                          // -5.00 USD  (accounting negative)
+
+Money.of("12.37", "CHF").roundToIncrement("0.05");     // 12.35 CHF (nearest 5 cents)
+Money.of("1.13", "USD").roundToIncrement("0.25");      // 1.25 USD
 ```
 
 ## Rounding policies
@@ -152,6 +166,34 @@ rate.inverse(); // USD/AUD @ 1.528351... (metadata.derivedFrom = "AUD/USD")
 > `FxRate` is treated as a **mid/reference rate** — it does not model a bid/ask
 > spread. For spread-sensitive dealing, use two rates (e.g. a bid `FxRate` and an
 > ask `FxRate`) and pick the side explicitly.
+
+### Pip math & rate freshness
+
+```ts
+const r = FxRate.of("AUD", "USD", "0.6543", { asOf: new Date() });
+
+r.pipSize();                          // "0.0001"  (JPY-quoted pairs → "0.01")
+r.pipsTo(FxRate.of("AUD", "USD", "0.6553")); // 10  (signed pip distance)
+r.addPips(10);                        // AUD/USD @ 0.6553  (fractional pips allowed)
+r.pipValue(Money.of("100000", "AUD"));// 10.00 USD per pip for a 100k notional
+
+// Reject stale rates at conversion time:
+r.convert(Money.of("100.00", "AUD"), { maxAge: "5m" }); // throws StaleRateError if older than 5m
+r.isStale("5m"); r.age();                                 // freshness inspection
+```
+
+### Multi-currency portfolios
+
+```ts
+import { Portfolio } from "safemoney";
+
+const p = Portfolio.of(Money.of("100.00", "AUD"), Money.of("50.00", "USD"))
+  .add(Money.of("25.00", "AUD"));
+
+p.balance("AUD");          // 125.00 AUD
+p.currencies();            // ["AUD", "USD"]
+p.valuate("USD", board);   // total value in USD via an FxBoard
+```
 
 ### Rate boards & triangulation
 
@@ -209,7 +251,7 @@ Money.fromJSON(json);                            // lossless round-trip
 
 All errors extend `MoneyError`: `InvalidAmountError`, `UnknownCurrencyError`,
 `CurrencyMismatchError`, `RoundingNecessaryError`, `FxRateMismatchError`,
-`AllocationError`.
+`StaleRateError`, `AllocationError`.
 
 ## Development
 

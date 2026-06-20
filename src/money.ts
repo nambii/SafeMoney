@@ -21,7 +21,7 @@ import {
   CurrencyMismatchError,
   RoundingNecessaryError,
 } from "./errors.js";
-import { formatMoney, type FormatOptions } from "./format.js";
+import { formatMoney, normalizeLocaleNumber, type FormatOptions } from "./format.js";
 import { divideRound, RoundingMode } from "./rounding.js";
 
 /** Serialized form of a {@link Money}, safe to JSON.stringify and round-trip. */
@@ -108,6 +108,54 @@ export class Money {
     return new Money({ units: 0n, scale: currency.decimals }, currency);
   }
 
+  /**
+   * Parse a localized, human-typed string into money (the inverse of
+   * {@link Money.format}). Handles currency symbols/codes, grouping separators,
+   * locale digits, and accounting parentheses for negatives.
+   *
+   * @example
+   * Money.parse("$1,234.56", "USD");                       // 1234.56 USD
+   * Money.parse("1.234,56 €", "EUR", { locale: "de-DE" }); // 1234.56 EUR
+   * Money.parse("(5.00)", "USD");                          // -5.00 USD
+   */
+  static parse(text: string, code: CurrencyCodeInput, options: { locale?: string } = {}): Money {
+    return Money.of(normalizeLocaleNumber(text, options.locale), code);
+  }
+
+  /**
+   * Sum a list of same-currency amounts. Pass `code` to fix the currency (and to
+   * define the result for an empty list); otherwise it is inferred from the
+   * first element and an empty list throws.
+   */
+  static sum(monies: ReadonlyArray<Money>, code?: CurrencyCodeInput): Money {
+    if (monies.length === 0) {
+      if (code === undefined) {
+        throw new CurrencyMismatchError("(empty)", "(unknown)");
+      }
+      return Money.zero(code);
+    }
+    const seed = code !== undefined ? Money.zero(code) : monies[0]!.zeroLike();
+    return monies.reduce((acc, m) => acc.add(m), seed);
+  }
+
+  /** The smallest of a non-empty list of same-currency amounts. */
+  static min(monies: ReadonlyArray<Money>): Money {
+    return Money.reduceExtremum(monies, "min");
+  }
+
+  /** The largest of a non-empty list of same-currency amounts. */
+  static max(monies: ReadonlyArray<Money>): Money {
+    return Money.reduceExtremum(monies, "max");
+  }
+
+  private static reduceExtremum(monies: ReadonlyArray<Money>, kind: "min" | "max"): Money {
+    const first = monies[0];
+    if (first === undefined) {
+      throw new AllocationError(`Money.${kind}() requires a non-empty list.`);
+    }
+    return monies.reduce((acc, m) => acc[kind](m), first);
+  }
+
   /** Reconstruct money from {@link Money.toJSON} output. */
   static fromJSON(json: MoneyJSON): Money {
     return Money.of(json.amount, json.currency);
@@ -116,6 +164,11 @@ export class Money {
   /** Whether `value` is a Money instance. */
   static isMoney(value: unknown): value is Money {
     return value instanceof Money;
+  }
+
+  /** A zero of this money's currency at the currency's minor scale. */
+  private zeroLike(): Money {
+    return new Money({ units: 0n, scale: this.currency.decimals }, this.currency);
   }
 
   // ---------------------------------------------------------------------------
@@ -216,6 +269,27 @@ export class Money {
     decimals: number = this.currency.decimals,
   ): Money {
     return new Money(rescale(this.value, decimals, mode), this.currency);
+  }
+
+  /**
+   * Round to the nearest multiple of `increment` (cash rounding), using `mode`
+   * (default HALF_EVEN). Use this for smallest-denomination rounding that is
+   * coarser than the minor unit, e.g. Swiss 5-cent rounding.
+   *
+   * @example
+   * Money.of("12.37", "CHF").roundToIncrement("0.05"); // 12.35 CHF
+   * Money.of("12.38", "CHF").roundToIncrement("0.05"); // 12.40 CHF
+   */
+  roundToIncrement(increment: Numeric, mode: RoundingMode = RoundingMode.HALF_EVEN): Money {
+    const inc = parseScaled(increment);
+    if (inc.units <= 0n) {
+      throw new RangeError("Increment must be positive");
+    }
+    // n = round(value / increment); result = n * increment.
+    const numerator = this.value.units * pow10(inc.scale);
+    const denominator = inc.units * pow10(this.value.scale);
+    const n = divideRound(numerator, denominator, mode);
+    return new Money({ units: n * inc.units, scale: inc.scale }, this.currency);
   }
 
   // ---------------------------------------------------------------------------
