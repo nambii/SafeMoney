@@ -123,8 +123,10 @@ Money.of("2.5", "USD").round(RoundingMode.HALF_EVEN, 0); // enum or the string "
 
 ## FX conversion & metadata
 
-A directed rate carries provenance metadata (`source`, `asOf`, and any custom
-fields) for audit trails:
+A rate is scoped to its currency pair and carries provenance metadata
+(`source`, `asOf`, and any custom fields) for audit trails. `convert` works in
+**either direction** but accepts **only the pair's two currencies** — anything
+else throws:
 
 ```ts
 import { Money, FxRate } from "safemoney";
@@ -135,14 +137,21 @@ const rate = FxRate.of("AUD", "USD", "0.6543", {
   tier: "retail",
 });
 
-rate.convert(Money.of("100.00", "AUD"));                 // 65.43 USD (HALF_EVEN)
+rate.convert(Money.of("100.00", "AUD"));                 // 65.43 USD  (forward, ×rate)
+rate.convert(Money.of("100.00", "USD"));                 // 152.84 AUD (reverse, ÷rate)
 rate.convert(Money.of("100.00", "AUD"), { mode: "UP" }); // round-up variant
+rate.convert(Money.of("100.00", "EUR"));                 // throws — only AUD or USD allowed
 
-const audit = rate.convertWithDetails(Money.of("100.00", "AUD"));
-// { from: 100.00 AUD, to: 65.43 USD, rate: AUD/USD @ 0.6543 }
+const audit = rate.convertWithDetails(Money.of("100.00", "USD"));
+// { from: 100.00 USD, to: 152.84 AUD, rate: AUD/USD @ 0.6543, direction: "reverse" }
 
 rate.inverse(); // USD/AUD @ 1.528351... (metadata.derivedFrom = "AUD/USD")
 ```
+
+> **Note:** the reverse leg applies the *exact inverse* (`1 / rate`), so a single
+> `FxRate` is treated as a **mid/reference rate** — it does not model a bid/ask
+> spread. For spread-sensitive dealing, use two rates (e.g. a bid `FxRate` and an
+> ask `FxRate`) and pick the side explicitly.
 
 ### Rate boards & triangulation
 

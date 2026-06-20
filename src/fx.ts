@@ -39,15 +39,21 @@ export interface FxConversion {
   readonly from: Money;
   readonly to: Money;
   readonly rate: FxRate;
+  /** Which leg of the pair was applied: "forward" (base→quote) or "reverse" (quote→base). */
+  readonly direction: "forward" | "reverse";
 }
 
 /**
- * A directed exchange rate `from → to` with optional provenance metadata.
- * 1 unit of `from` equals `rate` units of `to`.
+ * An exchange rate for the unordered pair `{from, to}` with optional provenance
+ * metadata. The stored price means 1 unit of `from` equals `rate` units of `to`,
+ * but conversion works in **either** direction: a rate involving AUD/USD accepts
+ * AUD or USD and nothing else. Reverse conversions apply the exact inverse, so
+ * the single rate is treated as a mid/reference rate (no bid/ask spread).
  *
  * @example
  * const r = FxRate.of("AUD", "USD", "0.6543", { source: "ECB", asOf: new Date() });
- * r.convert(Money.of("100.00", "AUD")); // → 65.43 USD
+ * r.convert(Money.of("100.00", "AUD")); // → 65.43 USD   (forward)
+ * r.convert(Money.of("100.00", "USD")); // → 152.84 AUD  (reverse, exact inverse)
  */
 export class FxRate {
   readonly from: CurrencyInfo;
@@ -84,23 +90,41 @@ export class FxRate {
     return scaledToString(this.rateValue);
   }
 
-  /** Convert a `from`-currency amount into the `to` currency. */
+  /**
+   * Convert an amount in either currency of the pair. Passing the `from`
+   * currency multiplies by the rate (forward); passing the `to` currency
+   * applies the exact inverse (reverse). Any other currency is rejected, so a
+   * rate involving AUD/USD only ever accepts AUD or USD.
+   */
   convert(money: Money, options: ConvertOptions = {}): Money {
-    if (money.currency.code !== this.from.code) {
-      throw new FxRateMismatchError(
-        `Rate ${this.from.code}->${this.to.code} cannot convert ${money.currency.code}.`,
-      );
-    }
     const mode = options.mode ?? RoundingMode.HALF_EVEN;
-    const decimals = options.decimals ?? this.to.decimals;
-    const product = multiplyScaled(money.unsafeScaled(), this.rateValue);
-    const rounded = rescale(product, decimals, mode);
-    return Money.unsafeOf(rounded, this.to);
+    const code = money.currency.code;
+
+    if (code === this.from.code) {
+      const decimals = options.decimals ?? this.to.decimals;
+      const product = multiplyScaled(money.unsafeScaled(), this.rateValue);
+      return Money.unsafeOf(rescale(product, decimals, mode), this.to);
+    }
+
+    if (code === this.to.code) {
+      const decimals = options.decimals ?? this.from.decimals;
+      const value = money.unsafeScaled();
+      // (value / rate) rounded to `decimals` = round(value * 10^(rateScale+decimals) / (rateUnits * 10^valueScale))
+      const numerator = value.units * pow10(this.rateValue.scale + decimals);
+      const denominator = this.rateValue.units * pow10(value.scale);
+      const units = divideRound(numerator, denominator, mode);
+      return Money.unsafeOf({ units, scale: decimals }, this.from);
+    }
+
+    throw new FxRateMismatchError(
+      `Rate ${this.from.code}/${this.to.code} only converts ${this.from.code} or ${this.to.code}, received ${code}.`,
+    );
   }
 
-  /** Convert and return the rate/metadata alongside the result for audit trails. */
+  /** Convert and return the rate, direction, and metadata for audit trails. */
   convertWithDetails(money: Money, options: ConvertOptions = {}): FxConversion {
-    return { from: money, to: this.convert(money, options), rate: this };
+    const direction = money.currency.code === this.from.code ? "forward" : "reverse";
+    return { from: money, to: this.convert(money, options), rate: this, direction };
   }
 
   /**

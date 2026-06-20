@@ -31,9 +31,25 @@ test("convert into a 0-dp currency (JPY) uses banker's rounding by default", () 
   );
 });
 
-test("convert rejects wrong source currency", () => {
+test("convert is bidirectional within the pair", () => {
+  const rate = FxRate.of("AUD", "USD", "0.6543");
+  // forward: AUD -> USD
+  assert.equal(rate.convert(Money.of("100.00", "AUD")).toString(), "65.43 USD");
+  // reverse: USD -> AUD using the exact inverse (100 / 0.6543 = 152.835...)
+  assert.equal(rate.convert(Money.of("100.00", "USD")).toString(), "152.84 AUD");
+});
+
+test("reverse conversion agrees with inverse().convert()", () => {
+  const rate = FxRate.of("AUD", "USD", "0.6543");
+  const viaReverse = rate.convert(Money.of("250.00", "USD"));
+  const viaInverse = rate.inverse().convert(Money.of("250.00", "USD"));
+  assert.ok(viaReverse.equals(viaInverse), `${viaReverse} vs ${viaInverse}`);
+});
+
+test("convert rejects any currency outside the pair", () => {
   const rate = FxRate.of("AUD", "USD", "0.65");
   assert.throws(() => rate.convert(Money.of("100", "EUR")), FxRateMismatchError);
+  assert.throws(() => rate.convert(Money.of("100", "JPY")), FxRateMismatchError);
 });
 
 test("rate metadata is preserved and frozen", () => {
@@ -45,12 +61,17 @@ test("rate metadata is preserved and frozen", () => {
   assert.ok(Object.isFrozen(rate.metadata));
 });
 
-test("convertWithDetails returns audit trail", () => {
+test("convertWithDetails returns audit trail with direction", () => {
   const rate = FxRate.of("AUD", "USD", "0.6543");
-  const details = rate.convertWithDetails(Money.of("100.00", "AUD"));
-  assert.equal(details.from.getAmount(), "100.00");
-  assert.equal(details.to.getAmount(), "65.43");
-  assert.equal(details.rate, rate);
+  const fwd = rate.convertWithDetails(Money.of("100.00", "AUD"));
+  assert.equal(fwd.from.getAmount(), "100.00");
+  assert.equal(fwd.to.getAmount(), "65.43");
+  assert.equal(fwd.rate, rate);
+  assert.equal(fwd.direction, "forward");
+
+  const rev = rate.convertWithDetails(Money.of("100.00", "USD"));
+  assert.equal(rev.to.code, "AUD");
+  assert.equal(rev.direction, "reverse");
 });
 
 test("inverse rate round-trips approximately and carries provenance", () => {
