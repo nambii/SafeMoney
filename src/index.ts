@@ -22,6 +22,14 @@ export { Portfolio } from "./portfolio.js";
 export { FxRate, FxBoard, toMillis } from "./fx.js";
 export type { FxMetadata, ConvertOptions, FxConversion, Duration } from "./fx.js";
 
+export { Markup } from "./markup.js";
+export { Quote } from "./quote.js";
+export type { QuoteOptions, QuoteJSON } from "./quote.js";
+export { Trade } from "./trade.js";
+export type { TradeParams, TradeJSON } from "./trade.js";
+export { RateBook } from "./ratebook.js";
+export type { LiquidityProvider } from "./ratebook.js";
+
 export { formatMoney, normalizeLocaleNumber } from "./format.js";
 export type { FormatOptions } from "./format.js";
 
@@ -45,6 +53,7 @@ export {
   RoundingNecessaryError,
   FxRateMismatchError,
   StaleRateError,
+  QuoteExpiredError,
   AllocationError,
 } from "./errors.js";
 

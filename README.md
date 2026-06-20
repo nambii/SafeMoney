@@ -213,6 +213,48 @@ board.getRate("USD", "AUD");                      // inverse of AUD/USD
 board.convert(Money.of("100.00", "AUD"), "EUR");  // triangulated via USD
 ```
 
+## FX dealing: quotes, trades & margin
+
+Primitives for the source-rate → mark-up → quote → trade flow. You source cost
+rates from liquidity providers (tagged via `source`), apply a `Markup` to price a
+customer `Quote`, and turn an accepted quote into a `Trade` with explicit pay-in
+and payout legs. The spread you earn is captured as `margin` and never lost to
+rounding.
+
+```ts
+import { Money, FxRate, Markup, RateBook, Trade } from "safemoney";
+
+// 1. Cost rates from multiple liquidity providers.
+const book = new RateBook([
+  FxRate.of("AUD", "USD", "0.6543", { source: "JPM", asOf: new Date() }),
+  FxRate.of("AUD", "USD", "0.6545", { source: "CurrencyCloud", asOf: new Date() }),
+]);
+
+// 2. Quote the customer: best execution + 50 bps margin, valid for 30s.
+//    Fix the pay-in ("customer sends 1000 AUD") or the payout (forBuyAmount).
+const quote = book.quoteSell(Money.of("1000.00", "AUD"), "USD", {
+  markup: Markup.bps(50),
+  ttl: "30s",
+});
+quote.buy;       // 651.23 USD  (payout to beneficiary)
+quote.margin;    // 3.27 USD    (house revenue)
+quote.provider;  // "CurrencyCloud" (cheapest cost → best for the customer)
+quote.clientRate(6); // "0.651230"
+
+// 3. Customer accepts → a Trade with the two settlement legs.
+const trade = quote.accept({ id: "T-1001" });
+trade.payIn;   // 1000.00 AUD   (received from customer)
+trade.payOut;  // 651.23 USD    (sent to beneficiary)
+
+// 4. Roll up booked margin across trades into a per-currency revenue Portfolio.
+Trade.totalMargin([trade /* … */]).balance("USD"); // total USD revenue
+```
+
+`Markup` is exact (`Markup.bps`, `.percent`, `.ratio`) and always applied in the
+house's favour. `Quote.forBuyAmount` fixes the payout instead of the pay-in.
+Expired quotes throw `QuoteExpiredError` on `accept()`. `Trade` is a pure value
+object — lifecycle, persistence and payment rails stay in your application.
+
 ## Formatting
 
 `format()` uses `Intl.NumberFormat` and hands it the exact decimal string, so no
@@ -252,7 +294,7 @@ Money.fromJSON(json);                            // lossless round-trip
 
 All errors extend `MoneyError`: `InvalidAmountError`, `UnknownCurrencyError`,
 `CurrencyMismatchError`, `RoundingNecessaryError`, `FxRateMismatchError`,
-`StaleRateError`, `AllocationError`.
+`StaleRateError`, `QuoteExpiredError`, `AllocationError`.
 
 ## Development
 

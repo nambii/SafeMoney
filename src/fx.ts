@@ -123,6 +123,16 @@ export class FxRate {
     return scaledToString(this.rateValue);
   }
 
+  /** The liquidity provider / source, if tagged in metadata (e.g. "JPM"). */
+  get provider(): string | undefined {
+    return this.metadata.source;
+  }
+
+  /** @internal Exact rate value (quote units per 1 base unit). */
+  unsafeRate(): Scaled {
+    return this.rateValue;
+  }
+
   /**
    * Convert an amount in either currency of the pair. Passing the `from`
    * currency multiplies by the rate (forward); passing the `to` currency

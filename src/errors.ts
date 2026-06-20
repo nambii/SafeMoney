@@ -47,5 +47,8 @@ export class FxRateMismatchError extends MoneyError {}
 /** Thrown when a rate is older than the freshness window allowed for a conversion. */
 export class StaleRateError extends MoneyError {}
 
+/** Thrown when accepting a quote whose validity window has already passed. */
+export class QuoteExpiredError extends MoneyError {}
+
 /** Thrown for invalid allocation/split arguments (e.g. empty ratios, all-zero weights). */
 export class AllocationError extends MoneyError {}
