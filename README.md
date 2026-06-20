@@ -287,6 +287,33 @@ priced.margin;         // 137.40 USD              (house revenue)
 MarkupSchedule.of("AUD", tiers, { mode: "flat" });
 ```
 
+#### Multiple markups & attribution
+
+A tier (or a quote) can carry **several markups** — e.g. a house margin plus a
+partner commission. They combine additively by default; `Markup.compound`
+stacks them multiplicatively instead. The earned margin can then be split back
+across components with `Markup.attribute` (no money lost), for partner payout.
+
+```ts
+const house = Markup.bps(30);
+const partner = Markup.bps(20);
+
+Markup.sum(house, partner).asBps();      // 50
+Markup.compound(house, partner).asBps(); // 49.94 (applied in sequence)
+
+const schedule = MarkupSchedule.of("AUD", [
+  { upTo: "10000", markup: [house, partner] }, // two markups in one tier → 50 bps
+  { markup: Markup.bps(20) },
+]);
+
+const priced = schedule.price(cost, Money.of("5000", "AUD"));
+priced.margin; // 16.36 USD
+Markup.attribute(priced.margin, [house, partner]); // [9.82 USD, 6.54 USD]
+
+// Quotes accept a list too:
+Quote.forSellAmount(amount, "USD", cost, { markup: [house, partner] });
+```
+
 ## Formatting
 
 `format()` uses `Intl.NumberFormat` and hands it the exact decimal string, so no

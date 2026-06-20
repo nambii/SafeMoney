@@ -2,7 +2,7 @@ import { getCurrency, type CurrencyCodeInput, type CurrencyInfo } from "./curren
 import { parseScaled, pow10, type Numeric } from "./decimal.js";
 import { FxRateMismatchError } from "./errors.js";
 import { FxRate } from "./fx.js";
-import { Markup } from "./markup.js";
+import { Markup, type MarkupLike, resolveMarkup } from "./markup.js";
 import type { Money } from "./money.js";
 import { Quote } from "./quote.js";
 import { RoundingMode } from "./rounding.js";
@@ -14,7 +14,16 @@ export interface MarkupTier {
    * tier to make it open-ended (applies to everything above the prior bound).
    */
   readonly upTo?: Numeric;
-  /** Margin for this band. */
+  /**
+   * Margin for this band — a single {@link Markup}, or several (e.g. a house
+   * margin plus a partner commission) which are combined additively.
+   */
+  readonly markup: MarkupLike;
+}
+
+// A tier with its markups already resolved to a single Markup.
+interface ResolvedTier {
+  readonly upTo?: Numeric;
   readonly markup: Markup;
 }
 
@@ -74,9 +83,9 @@ export interface PriceOptions {
 export class MarkupSchedule {
   readonly base: CurrencyInfo;
   readonly mode: TierMode;
-  private readonly tiers: ReadonlyArray<MarkupTier>;
+  private readonly tiers: ReadonlyArray<ResolvedTier>;
 
-  private constructor(base: CurrencyInfo, tiers: ReadonlyArray<MarkupTier>, mode: TierMode) {
+  private constructor(base: CurrencyInfo, tiers: ReadonlyArray<ResolvedTier>, mode: TierMode) {
     this.base = base;
     this.tiers = tiers;
     this.mode = mode;
@@ -109,7 +118,12 @@ export class MarkupSchedule {
       }
       previous = normalized;
     }
-    return new MarkupSchedule(getCurrency(base), tiers, options.mode ?? "progressive");
+    const resolved: ResolvedTier[] = tiers.map((t) =>
+      t.upTo !== undefined
+        ? { upTo: t.upTo, markup: resolveMarkup(t.markup) }
+        : { markup: resolveMarkup(t.markup) },
+    );
+    return new MarkupSchedule(getCurrency(base), resolved, options.mode ?? "progressive");
   }
 
   /** The effective margin for `baseAmount` (blended for progressive, looked-up for flat). */

@@ -3,14 +3,14 @@ import { pow10, scaledToString, type Scaled } from "./decimal.js";
 import { FxRateMismatchError, QuoteExpiredError } from "./errors.js";
 import { type Duration, FxRate, toMillis } from "./fx.js";
 import { Money } from "./money.js";
-import { Markup } from "./markup.js";
+import { Markup, type MarkupLike, resolveMarkup } from "./markup.js";
 import { divideRound, RoundingMode } from "./rounding.js";
 import { Trade } from "./trade.js";
 
 /** Options shared by the quote factories. */
 export interface QuoteOptions {
-  /** Margin applied to the cost rate. Defaults to {@link Markup.zero}. */
-  readonly markup?: Markup;
+  /** Margin applied to the cost rate — one {@link Markup} or several (combined additively). */
+  readonly markup?: MarkupLike;
   /** Rounding used when reducing computed amounts to a currency's minor unit. Default HALF_EVEN. */
   readonly mode?: RoundingMode;
   /** Absolute expiry. Takes precedence over `ttl`. */
@@ -113,7 +113,8 @@ export class Quote {
     const { forward } = classify(costRate, sell.currency.code, buyInfo.code);
     const r = costRate.unsafeRate();
     const s = sell.unsafeScaled();
-    const { num: kN, den: kD } = (options.markup ?? Markup.zero()).retention();
+    const markup = resolveMarkup(options.markup);
+    const { num: kN, den: kD } = markup.retention();
     const mode = options.mode ?? RoundingMode.HALF_EVEN;
 
     // buy = sell × rate × k  (forward) | sell × k ÷ rate (reverse)
@@ -124,7 +125,7 @@ export class Quote {
       ? rationalMoney(s.units * r.units, pow10(s.scale + r.scale), buyInfo, mode)
       : rationalMoney(s.units * pow10(r.scale), pow10(s.scale) * r.units, buyInfo, mode);
 
-    return Quote.build(sell, buy, buyAtCost.subtract(buy), costRate, "sell", options);
+    return Quote.build(sell, buy, buyAtCost.subtract(buy), costRate, "sell", markup, options);
   }
 
   /** Quote for a fixed payout amount: the beneficiary receives exactly `buy`. */
@@ -139,7 +140,8 @@ export class Quote {
     const { forward } = classify(costRate, sellInfo.code, buy.currency.code);
     const r = costRate.unsafeRate();
     const b = buy.unsafeScaled();
-    const { num: kN, den: kD } = (options.markup ?? Markup.zero()).retention();
+    const markup = resolveMarkup(options.markup);
+    const { num: kN, den: kD } = markup.retention();
     const mode = options.mode ?? RoundingMode.HALF_EVEN;
 
     // sell = buy ÷ (rate × k) (forward) | buy × rate ÷ k (reverse)
@@ -150,7 +152,7 @@ export class Quote {
       ? rationalMoney(b.units * pow10(r.scale), pow10(b.scale) * r.units, sellInfo, mode)
       : rationalMoney(b.units * r.units, pow10(b.scale + r.scale), sellInfo, mode);
 
-    return Quote.build(sell, buy, sell.subtract(sellAtCost), costRate, "buy", options);
+    return Quote.build(sell, buy, sell.subtract(sellAtCost), costRate, "buy", markup, options);
   }
 
   private static build(
@@ -159,6 +161,7 @@ export class Quote {
     margin: Money,
     costRate: FxRate,
     fixed: "sell" | "buy",
+    markup: Markup,
     options: QuoteOptions,
   ): Quote {
     const createdAt = options.createdAt ?? new Date();
@@ -173,7 +176,7 @@ export class Quote {
       buy,
       margin,
       costRate,
-      markup: options.markup ?? Markup.zero(),
+      markup,
       provider: options.provider ?? costRate.provider,
       fixed,
       createdAt,

@@ -1,4 +1,5 @@
 import { parseScaled, pow10, scaledToString, type Numeric } from "./decimal.js";
+import { Money } from "./money.js";
 
 /**
  * A pricing margin applied to a liquidity provider's cost rate to produce a
@@ -70,6 +71,53 @@ export class Markup {
     return new Markup(n, d, label ?? `${bps}bps`);
   }
 
+  /**
+   * Combine several markups additively (their fractions add): a 30 bps and a
+   * 20 bps margin together make 50 bps. The common case for stacking fees such
+   * as a house margin plus a partner commission. Exact.
+   */
+  static sum(...markups: Markup[]): Markup {
+    let num = 0n;
+    let den = 1n;
+    for (const m of markups) {
+      num = num * m.den + m.num * den;
+      den = den * m.den;
+    }
+    return Markup.fromFraction(num, den);
+  }
+
+  /**
+   * Combine several markups multiplicatively, as if each were applied in turn
+   * to the previous result: retention `k = Π(1 − fᵢ)`, so 30 bps then 20 bps
+   * is slightly under 50 bps. Exact.
+   */
+  static compound(...markups: Markup[]): Markup {
+    let num = 1n; // numerator of the retention product
+    let den = 1n;
+    for (const m of markups) {
+      num *= m.den - m.num;
+      den *= m.den;
+    }
+    return Markup.fromFraction(den - num, den); // f = 1 − k
+  }
+
+  /**
+   * Split an earned `margin` across the markup `components` in proportion to
+   * their fractions, distributing every minor unit (no money lost). Use this to
+   * attribute revenue back to each fee component, e.g. the partner's share.
+   */
+  static attribute(margin: Money, components: ReadonlyArray<Markup>): Money[] {
+    if (components.length === 0) {
+      throw new RangeError("attribute() needs at least one component.");
+    }
+    const den = components.reduce((d, c) => d * c.den, 1n);
+    const weights = components.map((c) => c.num * (den / c.den));
+    if (weights.every((w) => w === 0n)) {
+      return components.map(() => Money.zero(margin.currency.code));
+    }
+    return margin.allocate(weights);
+  }
+
   /** The markup fraction as `num/den` (house's take per unit). */
   fraction(): { num: bigint; den: bigint } {
     return { num: this.num, den: this.den };
@@ -95,4 +143,13 @@ function gcd(a: bigint, b: bigint): bigint {
     [a, b] = [b, a % b];
   }
   return a < 0n ? -a : a;
+}
+
+/** A single markup, or several to be combined additively. */
+export type MarkupLike = Markup | ReadonlyArray<Markup>;
+
+/** Normalize a {@link MarkupLike} (or nothing) into one {@link Markup}. */
+export function resolveMarkup(markup: MarkupLike | undefined): Markup {
+  if (markup === undefined) return Markup.zero();
+  return Array.isArray(markup) ? Markup.sum(...markup) : (markup as Markup);
 }
