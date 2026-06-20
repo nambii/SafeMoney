@@ -44,7 +44,7 @@
     "LICENSE"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "scripts": {
     "clean": "node -e \"const f=require('fs');for(const d of ['dist','dist-test'])f.rmSync(d,{recursive:true,force:true})\"",

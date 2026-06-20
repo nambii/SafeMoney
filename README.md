@@ -29,8 +29,9 @@ operation returns a new frozen value.
 npm install safemoney
 ```
 
-Ships dual ESM + CommonJS builds with full type declarations. Node ≥ 18, and any
-modern bundler. No runtime dependencies.
+Ships dual ESM + CommonJS builds with full type declarations. Node ≥ 20 (where
+`Intl` formats decimal strings losslessly), and any modern bundler. No runtime
+dependencies.
 
 ```ts
 import { Money } from "safemoney";       // ESM / TypeScript
