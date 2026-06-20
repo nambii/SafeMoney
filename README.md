@@ -355,7 +355,49 @@ All errors extend `MoneyError`: `InvalidAmountError`, `UnknownCurrencyError`,
 `CurrencyMismatchError`, `RoundingNecessaryError`, `FxRateMismatchError`,
 `StaleRateError`, `QuoteExpiredError`, `AllocationError`.
 
+## Limitations & assumptions
+
+Money is unforgiving, so be explicit about what this library does and does not
+guarantee. Read this before using it for real settlement.
+
+- **Maturity.** This is a young library. It has unit and property-based tests
+  (see below) but **no production track record and no independent audit**.
+  Treat it as a strong starting point, not a proven source of truth.
+- **Reconcile before you trust it.** Pricing/margin output must be checked
+  against how your liquidity providers actually quote and settle. A
+  reconciliation harness is provided (`npm run reconcile`) — populate it with
+  real recorded deals before relying on the numbers.
+- **Single mid/reference rate.** `FxRate` holds one rate, not a two-sided
+  quote. Reverse conversion uses the exact inverse (`1/rate`), so it does **not**
+  model a bid/ask spread. For spread-sensitive dealing, hold separate bid and
+  ask rates.
+- **Rounding is explicit, defaults are neutral.** Value-losing operations
+  require a `RoundingMode`; `round()`/conversions default to `HALF_EVEN`
+  (banker's). The library does **not** automatically round in the house's
+  favour — choose the mode that matches your dealing convention.
+- **Margin currency.** A fixed pay-in (`forSellAmount`) books margin in the
+  buy currency; a fixed payout (`forBuyAmount`) books it in the sell currency.
+- **Markups combine additively by default** (`Markup.sum`); use
+  `Markup.compound` for sequential application.
+- **Pip convention.** Pips are 0.0001, or 0.01 for JPY-quoted pairs.
+- **Formatting needs Node ≥ 20**, where `Intl` formats decimal strings without
+  precision loss.
+- **Currency data is a point-in-time snapshot** of ISO 4217 minor units;
+  verify codes you depend on, and register anything custom.
+
 ## Development
+
+```sh
+npm install
+npm run build      # dual ESM + CJS build into dist/
+npm test           # build + run the unit and property-based (fast-check) suite
+npm run typecheck  # strict type-check of src and tests
+npm run reconcile  # check pricing against recorded provider deals (needs a build)
+```
+
+Property-based tests (`test/properties.test.ts`) assert invariants over hundreds
+of random inputs — e.g. allocation always conserves the total, margin is never
+negative, and amounts round-trip exactly.
 
 ```sh
 npm install

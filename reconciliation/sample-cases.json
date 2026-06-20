@@ -1,0 +1,55 @@
+{
+  "_comment": "Sample reconciliation cases. Replace these with REAL recorded deals from your liquidity providers (JPM, Currency Cloud): the cost rate they quoted, the markup you applied, the fixed leg, and the payout/margin you actually settled. Run with: npm run build && npm run reconcile. `toleranceMinor` allows N minor units of slack per field (set 0 for exact).",
+  "tolerance": { "minorUnits": 0 },
+  "cases": [
+    {
+      "id": "AUDUSD-sell-50bps",
+      "provider": "JPM",
+      "costRate": { "from": "AUD", "to": "USD", "rate": "0.6543" },
+      "markupBps": 50,
+      "fix": "sell",
+      "amount": { "currency": "AUD", "value": "1000.00" },
+      "expect": {
+        "payout": { "currency": "USD", "value": "651.03" },
+        "margin": { "currency": "USD", "value": "3.27" },
+        "clientRate": "0.6510"
+      }
+    },
+    {
+      "id": "AUDUSD-buy-50bps",
+      "provider": "CurrencyCloud",
+      "costRate": { "from": "AUD", "to": "USD", "rate": "0.6543" },
+      "markupBps": 50,
+      "fix": "buy",
+      "amount": { "currency": "USD", "value": "1000.00" },
+      "expect": {
+        "payin": { "currency": "AUD", "value": "1536.03" },
+        "margin": { "currency": "AUD", "value": "7.68" }
+      }
+    },
+    {
+      "id": "AUDUSD-sell-nomarkup",
+      "provider": "JPM",
+      "costRate": { "from": "AUD", "to": "USD", "rate": "0.6543" },
+      "markupBps": 0,
+      "fix": "sell",
+      "amount": { "currency": "AUD", "value": "100.00" },
+      "expect": {
+        "payout": { "currency": "USD", "value": "65.43" },
+        "margin": { "currency": "USD", "value": "0.00" }
+      }
+    },
+    {
+      "id": "USDJPY-sell-stacked-30+20bps",
+      "provider": "JPM",
+      "costRate": { "from": "USD", "to": "JPY", "rate": "157.85" },
+      "markups": [30, 20],
+      "fix": "sell",
+      "amount": { "currency": "USD", "value": "10000.00" },
+      "expect": {
+        "payout": { "currency": "JPY", "value": "1570608" },
+        "margin": { "currency": "JPY", "value": "7892" }
+      }
+    }
+  ]
+}
