@@ -9,3 +9,4 @@ coverage/
 reports/
 *.tgz
 .npmrc
+docs/

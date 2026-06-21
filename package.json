@@ -126,6 +126,8 @@
     "check": "biome check ./src ./test ./scripts",
     "mutation": "stryker run",
     "examples": "npm run build && node examples/money-basics.mjs && node examples/fx-dealing.mjs",
+    "bench": "npm run build && node bench/run.mjs",
+    "docs": "typedoc",
     "reconcile": "node scripts/reconcile.mjs",
     "prepublishOnly": "npm run build"
   },
@@ -135,6 +137,7 @@
     "@types/node": "^20.14.0",
     "c8": "^11.0.0",
     "fast-check": "^4.8.0",
+    "typedoc": "^0.28.19",
     "typescript": "^5.5.0"
   },
   "publishConfig": {

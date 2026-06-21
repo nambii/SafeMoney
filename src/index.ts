@@ -44,6 +44,7 @@ export type {
   SpreadSpec,
 } from "./fx.js";
 export { FxBoard, FxQuote, FxRate, toMillis } from "./fx.js";
+export type { MarkupLike } from "./markup.js";
 export { Markup } from "./markup.js";
 export type { MoneyJSON, MoneyOptions } from "./money.js";
 // Default export is the Money class, for `import Money from "safemoney"`.
