@@ -35,8 +35,15 @@ export {
 } from "./errors.js";
 export type { FormatOptions } from "./format.js";
 export { formatMoney, normalizeLocaleNumber } from "./format.js";
-export type { ConvertOptions, Duration, FxConversion, FxMetadata } from "./fx.js";
-export { FxBoard, FxRate, toMillis } from "./fx.js";
+export type {
+  ConvertOptions,
+  Duration,
+  FxConversion,
+  FxMetadata,
+  FxQuoteConversion,
+  SpreadSpec,
+} from "./fx.js";
+export { FxBoard, FxQuote, FxRate, toMillis } from "./fx.js";
 export { Markup } from "./markup.js";
 export type { MoneyJSON, MoneyOptions } from "./money.js";
 // Default export is the Money class, for `import Money from "safemoney"`.

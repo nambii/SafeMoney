@@ -163,10 +163,39 @@ const audit = rate.convertWithDetails(Money.of("100.00", "USD"));
 rate.inverse(); // USD/AUD @ 1.528351... (metadata.derivedFrom = "AUD/USD")
 ```
 
-> **Note:** the reverse leg applies the *exact inverse* (`1 / rate`), so a single
-> `FxRate` is treated as a **mid/reference rate** — it does not model a bid/ask
-> spread. For spread-sensitive dealing, use two rates (e.g. a bid `FxRate` and an
-> ask `FxRate`) and pick the side explicitly.
+> **Note:** the reverse leg of an `FxRate` applies the *exact inverse*
+> (`1 / rate`), so a single `FxRate` is a **mid/reference rate** with no spread.
+> For spread-sensitive dealing, use `FxQuote` (below).
+
+### Two-way prices (bid/ask spread)
+
+`FxQuote` models a dealer's two-way price for a pair. The customer always trades
+on the side that favours the house: bringing the base currency hits the **bid**,
+bringing the quote currency hits the **ask**, so the spread is earned in either
+direction. Build one from explicit bid/ask, or by widening a mid rate by pips,
+basis points, or an absolute amount.
+
+```ts
+import { Money, FxRate, FxQuote } from "safemoney";
+
+const mid = FxRate.of("EUR", "USD", "1.1000", { source: "JPM", asOf: new Date() });
+const q = FxQuote.fromMid(mid, { pips: 2 });   // 1.0999 / 1.1001
+
+q.convert(Money.of("100.00", "EUR"));  // sells EUR at the bid → 109.99 USD
+q.convert(Money.of("110.00", "USD"));  // buys EUR at the ask  → 99.99 EUR
+
+q.spread();      // "0.0002"
+q.spreadPips();  // 2
+q.spreadBps();   // ~1.818
+q.mid();         // EUR/USD @ 1.1   (FxRate)
+q.bidRate();     // one-way FxRate, metadata.side = "bid"
+
+// Or construct directly:
+FxQuote.of("EUR", "USD", "1.0999", "1.1001", { source: "JPM" });
+```
+
+`convertWithDetails` reports which `side` ("bid"/"ask") and `direction` were used,
+for audit trails.
 
 ### Pip math & rate freshness
 

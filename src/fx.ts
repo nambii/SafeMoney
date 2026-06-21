@@ -1,5 +1,7 @@
 import { type CurrencyCodeInput, type CurrencyInfo, getCurrency } from "./currencies.js";
 import {
+  addScaled,
+  compareScaled,
   multiplyScaled,
   type Numeric,
   parseScaled,
@@ -7,6 +9,7 @@ import {
   rescale,
   type Scaled,
   scaledToString,
+  subtractScaled,
 } from "./decimal.js";
 import { FxRateMismatchError, MoneyError, StaleRateError } from "./errors.js";
 import { Money } from "./money.js";
@@ -290,6 +293,248 @@ export class FxRate {
       );
     }
   }
+}
+
+/**
+ * How the bid/ask spread is expressed when building a {@link FxQuote} from a
+ * mid rate. Exactly one of:
+ * - `pips`: total spread in pips (e.g. `{ pips: 2 }` for a 2-pip spread).
+ * - `bps`: total spread in basis points of the mid rate.
+ * - `absolute`: total spread as a raw price difference in quote units.
+ *
+ * The given amount is the **full** bid→ask width; half is applied on each side
+ * of the mid, all in exact arithmetic.
+ */
+export type SpreadSpec = { pips: Numeric } | { bps: Numeric } | { absolute: Numeric };
+
+/** A conversion priced off one side of a {@link FxQuote}. */
+export interface FxQuoteConversion extends FxConversion {
+  /** Which side of the two-way price was applied. */
+  readonly side: "bid" | "ask";
+}
+
+/**
+ * A two-way (bid/ask) price for the ordered pair `base/quote`. Unlike a single
+ * mid {@link FxRate}, it captures the dealer's spread: the customer trades on
+ * the side that favours the house.
+ *
+ * Convention (quote units per 1 base unit, `bid ≤ ask`):
+ * - **bid** — the dealer *buys* base / the customer *sells* base. Lower rate.
+ * - **ask** — the dealer *sells* base / the customer *buys* base. Higher rate.
+ *
+ * {@link FxQuote.convert} picks the correct side automatically: bringing the
+ * base currency hits the bid, bringing the quote currency hits the ask, so the
+ * spread is earned in either direction.
+ *
+ * @example
+ * const mid = FxRate.of("EUR", "USD", "1.1000", { asOf: new Date() });
+ * const q = FxQuote.fromMid(mid, { pips: 2 });   // 1.0999 / 1.1001
+ * q.convert(Money.of("100.00", "EUR")); // sells EUR at the bid → 109.99 USD
+ * q.convert(Money.of("110.00", "USD")); // buys EUR at the ask  → 99.99 EUR
+ * q.spreadPips(); // 2
+ */
+export class FxQuote {
+  readonly from: CurrencyInfo;
+  readonly to: CurrencyInfo;
+  readonly metadata: FxMetadata;
+
+  // Exact bid/ask values (quote units per 1 base unit), bid <= ask.
+  private readonly bidValue: Scaled;
+  private readonly askValue: Scaled;
+
+  private constructor(
+    from: CurrencyInfo,
+    to: CurrencyInfo,
+    bid: Scaled,
+    ask: Scaled,
+    metadata: FxMetadata,
+  ) {
+    if (bid.units <= 0n) {
+      throw new MoneyError(`Bid must be positive, received: ${scaledToString(bid)}`);
+    }
+    if (compareScaled(bid, ask) > 0) {
+      throw new MoneyError(
+        `Bid must not exceed ask: ${scaledToString(bid)} > ${scaledToString(ask)}.`,
+      );
+    }
+    this.from = from;
+    this.to = to;
+    this.bidValue = bid;
+    this.askValue = ask;
+    this.metadata = Object.freeze({ ...metadata });
+    Object.freeze(this);
+  }
+
+  /** Build a two-way price directly from `bid` and `ask` decimal values. */
+  static of(
+    from: CurrencyCodeInput,
+    to: CurrencyCodeInput,
+    bid: Numeric,
+    ask: Numeric,
+    metadata: FxMetadata = {},
+  ): FxQuote {
+    return new FxQuote(
+      getCurrency(from),
+      getCurrency(to),
+      parseScaled(bid),
+      parseScaled(ask),
+      metadata,
+    );
+  }
+
+  /**
+   * Build a two-way price by widening a mid {@link FxRate} symmetrically by the
+   * given {@link SpreadSpec}. Metadata is carried over from the mid rate (and
+   * may be overridden by `metadata`).
+   */
+  static fromMid(mid: FxRate, spread: SpreadSpec, metadata: FxMetadata = {}): FxQuote {
+    const half = halfSpread(spread, mid);
+    const midValue = mid.unsafeRate();
+    return new FxQuote(
+      mid.from,
+      mid.to,
+      subtractScaled(midValue, half),
+      addScaled(midValue, half),
+      { ...mid.metadata, ...metadata },
+    );
+  }
+
+  /** The bid (dealer buys base) as a canonical decimal string. */
+  get bid(): string {
+    return scaledToString(trimZeros(this.bidValue));
+  }
+
+  /** The ask (dealer sells base) as a canonical decimal string. */
+  get ask(): string {
+    return scaledToString(trimZeros(this.askValue));
+  }
+
+  /** The liquidity provider / source, if tagged in metadata. */
+  get provider(): string | undefined {
+    return this.metadata.source;
+  }
+
+  /** The bid side as a one-way {@link FxRate}. */
+  bidRate(): FxRate {
+    return FxRate.of(this.from.code, this.to.code, this.bid, { ...this.metadata, side: "bid" });
+  }
+
+  /** The ask side as a one-way {@link FxRate}. */
+  askRate(): FxRate {
+    return FxRate.of(this.from.code, this.to.code, this.ask, { ...this.metadata, side: "ask" });
+  }
+
+  /** The mid rate `(bid + ask) / 2` as a one-way {@link FxRate}. */
+  mid(): FxRate {
+    // (bid + ask) / 2, exact: divide by 2 = ×5 with one extra fractional digit.
+    const sum = addScaled(this.bidValue, this.askValue);
+    const midValue: Scaled = { units: sum.units * 5n, scale: sum.scale + 1 };
+    return FxRate.of(this.from.code, this.to.code, scaledToString(trimZeros(midValue)), {
+      ...this.metadata,
+      side: "mid",
+    });
+  }
+
+  /** The absolute spread `ask − bid` as a canonical decimal string. */
+  spread(): string {
+    return scaledToString(trimZeros(subtractScaled(this.askValue, this.bidValue)));
+  }
+
+  /** The spread in pips (2 decimal places for JPY-quoted pairs, 4 otherwise). */
+  spreadPips(): number {
+    const diff = subtractScaled(this.askValue, this.bidValue);
+    return Number(scaledToString(diff)) * 10 ** this.pipExponent();
+  }
+
+  /** The spread in basis points of the mid rate. */
+  spreadBps(): number {
+    const diff = subtractScaled(this.askValue, this.bidValue);
+    const sum = addScaled(this.bidValue, this.askValue);
+    // diff / mid = diff / (sum/2) = 2·diff / sum.
+    return (Number(scaledToString(diff)) / Number(scaledToString(sum))) * 2 * 10_000;
+  }
+
+  /** Conventional pip decimal place: 2 for JPY-quoted pairs, 4 otherwise. */
+  pipExponent(): number {
+    return this.to.code === "JPY" ? 2 : 4;
+  }
+
+  /**
+   * Convert an amount, hitting the side that favours the house: bringing the
+   * base currency sells at the bid, bringing the quote currency buys at the ask.
+   */
+  convert(money: Money, options: ConvertOptions = {}): Money {
+    return this.sideFor(money).convert(money, options);
+  }
+
+  /** Convert and report which side, rate, and direction were used. */
+  convertWithDetails(money: Money, options: ConvertOptions = {}): FxQuoteConversion {
+    const side = money.currency.code === this.from.code ? "bid" : "ask";
+    const rate = this.sideFor(money);
+    return { ...rate.convertWithDetails(money, options), side };
+  }
+
+  toJSON(): {
+    from: string;
+    to: string;
+    bid: string;
+    ask: string;
+    mid: string;
+    provider: string | undefined;
+  } {
+    return {
+      from: this.from.code,
+      to: this.to.code,
+      bid: this.bid,
+      ask: this.ask,
+      mid: this.mid().rate,
+      provider: this.provider,
+    };
+  }
+
+  toString(): string {
+    return `${this.from.code}/${this.to.code} ${this.bid}/${this.ask}`;
+  }
+
+  // The one-way rate to apply for `money`: bid when selling base, ask when buying.
+  private sideFor(money: Money): FxRate {
+    const code = money.currency.code;
+    if (code === this.from.code) return this.bidRate();
+    if (code === this.to.code) return this.askRate();
+    throw new FxRateMismatchError(
+      `Quote ${this.from.code}/${this.to.code} only converts ${this.from.code} or ${this.to.code}, received ${code}.`,
+    );
+  }
+}
+
+// Drop trailing fractional zeros so derived rates display cleanly (1.09990 →
+// 1.0999). Value is unchanged; only the scale shrinks.
+function trimZeros(value: Scaled): Scaled {
+  let units = value.units;
+  let scale = value.scale;
+  while (scale > 0 && units % 10n === 0n) {
+    units /= 10n;
+    scale -= 1;
+  }
+  return { units, scale };
+}
+
+// Exact half-width of a spread, in quote units, for the given mid rate.
+function halfSpread(spread: SpreadSpec, mid: FxRate): Scaled {
+  // Dividing by 2 exactly: multiply units by 5 and add one fractional digit.
+  if ("absolute" in spread) {
+    const s = parseScaled(spread.absolute);
+    return { units: s.units * 5n, scale: s.scale + 1 };
+  }
+  if ("pips" in spread) {
+    const s = parseScaled(spread.pips);
+    // pips × pipSize ÷ 2, pipSize = 10^(-pipExponent).
+    return { units: s.units * 5n, scale: s.scale + mid.pipExponent() + 1 };
+  }
+  const s = parseScaled(spread.bps);
+  const m = mid.unsafeRate();
+  // mid × bps ÷ 10000 ÷ 2.
+  return { units: m.units * s.units * 5n, scale: m.scale + s.scale + 4 + 1 };
 }
 
 /**
