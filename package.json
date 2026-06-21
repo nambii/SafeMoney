@@ -1,0 +1,69 @@
+{
+  "name": "safemoney",
+  "version": "0.1.0",
+  "description": "Money-safe TypeScript primitives: currency-safe arithmetic with no floating-point errors, typed ISO 4217 currency codes, rounding policies, FX metadata, formatting and minor-unit conversion.",
+  "keywords": [
+    "money",
+    "currency",
+    "decimal",
+    "fx",
+    "foreign-exchange",
+    "iso-4217",
+    "rounding",
+    "bigint",
+    "finance",
+    "typescript"
+  ],
+  "license": "MIT",
+  "author": "Ebin Joshy Nambiaparambil",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nambii/safemoney.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nambii/safemoney/issues"
+  },
+  "homepage": "https://github.com/nambii/safemoney#readme",
+  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "clean": "node -e \"const f=require('fs');for(const d of ['dist','dist-test'])f.rmSync(d,{recursive:true,force:true})\"",
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build": "npm run clean && npm run build:esm && npm run build:cjs && node scripts/fixup-dist.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build:test": "tsc -p tsconfig.test.json",
+    "pretest": "npm run build:test",
+    "test": "node --test dist-test/test/*.test.js",
+    "reconcile": "node scripts/reconcile.mjs",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "fast-check": "^4.8.0",
+    "typescript": "^5.5.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
