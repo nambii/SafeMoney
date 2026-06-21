@@ -105,6 +105,12 @@ export class Markup {
    * Split an earned `margin` across the markup `components` in proportion to
    * their fractions, distributing every minor unit (no money lost). Use this to
    * attribute revenue back to each fee component, e.g. the partner's share.
+   *
+   * This proportional split is exact when the components were combined
+   * **additively** ({@link Markup.sum}), where margin ∝ Σfᵢ. For margins built
+   * with {@link Markup.compound}, each component's true contribution is
+   * order-dependent (a later fee only earns on the already-retained base), so a
+   * fraction-proportional split is an approximation.
    */
   static attribute(margin: Money, components: ReadonlyArray<Markup>): Money[] {
     if (components.length === 0) {
