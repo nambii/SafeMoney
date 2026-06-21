@@ -1,0 +1,21 @@
+version: 2
+updates:
+  # Surface vulnerable / outdated npm dependencies as PRs (and, with Dependabot
+  # security updates enabled in repo settings, auto-PR fixes for advisories).
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      # One grouped PR for routine dev-dependency bumps to cut noise; security
+      # updates still come through individually.
+      dev-dependencies:
+        patterns: ["*"]
+
+  # Keep the GitHub Actions used in CI (checkout, setup-node, osv-scanner, …)
+  # patched — actions are a real supply-chain surface.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly

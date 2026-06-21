@@ -1,0 +1,52 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly sweep (Mon 06:00 UTC) so newly disclosed advisories against the
+    # existing lockfile surface even with no code change.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # Hard gate: fail CI on high/critical advisories anywhere in the dependency
+  # tree (the published package has zero runtime deps; this covers dev tooling
+  # and any future runtime deps). Moderate/low are reported but don't block.
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: npm audit (fail on high/critical)
+        run: npm audit --audit-level=high
+
+  # OSV-Scanner on PRs: blocks only on vulnerabilities the PR *introduces*
+  # (compared against the base), so existing advisories don't wall off unrelated
+  # work. Results also upload to the Security tab.
+  osv-scan-pr:
+    if: github.event_name == 'pull_request'
+    permissions:
+      actions: read
+      security-events: write
+      contents: read
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v2.3.8
+
+  # OSV-Scanner full scan on push to main and on the weekly schedule: a complete
+  # lockfile sweep, with findings published to the Security tab as code-scanning
+  # alerts.
+  osv-scan:
+    if: github.event_name != 'pull_request'
+    permissions:
+      actions: read
+      security-events: write
+      contents: read
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.3.8
