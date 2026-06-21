@@ -1,0 +1,20 @@
+name: Mutation
+
+# Mutation testing is slow (recompiles per mutant), so it runs on demand and
+# weekly rather than on every push. It gates on the score in stryker.config.json.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run mutation

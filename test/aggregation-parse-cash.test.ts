@@ -1,11 +1,11 @@
-import { test } from "node:test";
 import assert from "node:assert/strict";
+import { test } from "node:test";
 import {
+  AllocationError,
+  CurrencyMismatchError,
+  InvalidAmountError,
   Money,
   RoundingMode,
-  CurrencyMismatchError,
-  AllocationError,
-  InvalidAmountError,
 } from "../src/index.js";
 
 test("Money.sum over a same-currency list", () => {
@@ -53,7 +53,10 @@ test("Money.parse rejects junk", () => {
 test("roundToIncrement performs cash rounding", () => {
   assert.equal(Money.of("12.37", "CHF").roundToIncrement("0.05").toString(), "12.35 CHF");
   assert.equal(Money.of("12.38", "CHF").roundToIncrement("0.05").toString(), "12.40 CHF");
-  assert.equal(Money.of("12.38", "CHF").roundToIncrement("0.05", RoundingMode.DOWN).toString(), "12.35 CHF");
+  assert.equal(
+    Money.of("12.38", "CHF").roundToIncrement("0.05", RoundingMode.DOWN).toString(),
+    "12.35 CHF",
+  );
   assert.equal(Money.of("1.07", "USD").roundToIncrement("0.25").toString(), "1.00 USD");
   assert.equal(Money.of("1.13", "USD").roundToIncrement("0.25").toString(), "1.25 USD");
   assert.throws(() => Money.of("1", "USD").roundToIncrement("0"), RangeError);

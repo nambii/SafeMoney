@@ -1,12 +1,6 @@
-import { test } from "node:test";
 import assert from "node:assert/strict";
-import {
-  Money,
-  FxRate,
-  FxBoard,
-  RoundingMode,
-  FxRateMismatchError,
-} from "../src/index.js";
+import { test } from "node:test";
+import { FxBoard, FxRate, FxRateMismatchError, Money, RoundingMode } from "../src/index.js";
 
 test("convert applies a directed rate and rounds to target minor units", () => {
   const rate = FxRate.of("AUD", "USD", "0.6543", { source: "ECB" });
@@ -17,8 +11,14 @@ test("convert applies a directed rate and rounds to target minor units", () => {
 
 test("convert rounds with chosen mode", () => {
   const rate = FxRate.of("AUD", "USD", "0.66666");
-  assert.equal(rate.convert(Money.of("10.00", "AUD"), { mode: RoundingMode.DOWN }).getAmount(), "6.66");
-  assert.equal(rate.convert(Money.of("10.00", "AUD"), { mode: RoundingMode.UP }).getAmount(), "6.67");
+  assert.equal(
+    rate.convert(Money.of("10.00", "AUD"), { mode: RoundingMode.DOWN }).getAmount(),
+    "6.66",
+  );
+  assert.equal(
+    rate.convert(Money.of("10.00", "AUD"), { mode: RoundingMode.UP }).getAmount(),
+    "6.67",
+  );
 });
 
 test("convert into a 0-dp currency (JPY) uses banker's rounding by default", () => {
@@ -90,10 +90,7 @@ test("rejects non-positive rates", () => {
 });
 
 test("FxBoard finds direct, inverse, and triangulated rates", () => {
-  const board = new FxBoard([
-    FxRate.of("AUD", "USD", "0.6543"),
-    FxRate.of("EUR", "USD", "1.0800"),
-  ]);
+  const board = new FxBoard([FxRate.of("AUD", "USD", "0.6543"), FxRate.of("EUR", "USD", "1.0800")]);
 
   // direct
   assert.equal(board.getRate("AUD", "USD").rate, "0.6543");

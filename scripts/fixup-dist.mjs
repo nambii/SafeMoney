@@ -2,7 +2,7 @@
 // dist/esm as ES modules and dist/cjs as CommonJS, regardless of the
 // root package.json "type" field. This is the standard dual-package
 // publishing trick that needs no bundler.
-import { writeFileSync, existsSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 
 const targets = [
   ["dist/esm/package.json", { type: "module" }],
@@ -12,8 +12,10 @@ const targets = [
 for (const [path, content] of targets) {
   const dir = path.slice(0, path.lastIndexOf("/"));
   if (!existsSync(dir)) {
-    throw new Error(`Expected build output directory "${dir}" to exist. Run the TypeScript build first.`);
+    throw new Error(
+      `Expected build output directory "${dir}" to exist. Run the TypeScript build first.`,
+    );
   }
-  writeFileSync(path, JSON.stringify(content, null, 2) + "\n");
+  writeFileSync(path, `${JSON.stringify(content, null, 2)}\n`);
   console.log(`wrote ${path}`);
 }

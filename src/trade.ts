@@ -1,5 +1,5 @@
 import type { FxRate } from "./fx.js";
-import { Money, type MoneyJSON } from "./money.js";
+import type { Money, MoneyJSON } from "./money.js";
 import { Portfolio } from "./portfolio.js";
 
 /** The data needed to construct a {@link Trade}. */

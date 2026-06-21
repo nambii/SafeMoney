@@ -1,12 +1,6 @@
-import { test } from "node:test";
 import assert from "node:assert/strict";
-import {
-  Money,
-  FxRate,
-  FxRateMismatchError,
-  StaleRateError,
-  toMillis,
-} from "../src/index.js";
+import { test } from "node:test";
+import { FxRate, FxRateMismatchError, Money, StaleRateError, toMillis } from "../src/index.js";
 
 test("pip size follows the JPY convention", () => {
   assert.equal(FxRate.of("AUD", "USD", "0.6543").pipExponent(), 4);
@@ -50,7 +44,10 @@ test("age / isStale / assertFresh", () => {
 
 test("convert enforces maxAge when requested", () => {
   const r = FxRate.of("AUD", "USD", "0.6543", { asOf });
-  assert.equal(r.convert(Money.of("100.00", "AUD"), { maxAge: "5m", now: at(3) }).toString(), "65.43 USD");
+  assert.equal(
+    r.convert(Money.of("100.00", "AUD"), { maxAge: "5m", now: at(3) }).toString(),
+    "65.43 USD",
+  );
   assert.throws(
     () => r.convert(Money.of("100.00", "AUD"), { maxAge: "5m", now: at(10) }),
     StaleRateError,

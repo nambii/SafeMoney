@@ -1,6 +1,6 @@
-import { test } from "node:test";
 import assert from "node:assert/strict";
-import { divideRound, RoundingMode, isRoundingMode } from "../src/rounding.js";
+import { test } from "node:test";
+import { divideRound, isRoundingMode, RoundingMode } from "../src/rounding.js";
 
 // 2.5 -> rounded to integer, exercising each tie rule.
 test("HALF rules at the exact midpoint", () => {

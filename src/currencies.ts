@@ -217,7 +217,9 @@ export function listCurrencies(): CurrencyInfo[] {
  */
 export function registerCurrency(info: CurrencyInfo): CurrencyInfo {
   if (!/^[A-Za-z0-9]{2,12}$/.test(info.code)) {
-    throw new RangeError(`Invalid currency code "${info.code}": expected 2–12 alphanumeric characters.`);
+    throw new RangeError(
+      `Invalid currency code "${info.code}": expected 2–12 alphanumeric characters.`,
+    );
   }
   if (!Number.isInteger(info.decimals) || info.decimals < 0 || info.decimals > 18) {
     throw new RangeError(`Invalid decimals for "${info.code}": expected an integer in [0, 18].`);
