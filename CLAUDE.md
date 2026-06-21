@@ -10,7 +10,7 @@ A zero-dependency TypeScript library with two layers:
 
 ## Architecture (`src/`)
 
-`decimal.ts` is the exact-arithmetic core (`Scaled`, `parseScaled`, `rescale`, add/sub/mul/compare). `rounding.ts` has the 8 `RoundingMode`s and the `divideRound` primitive everything rounds through. `money.ts` is the `Money` value object. `currencies.ts` is the ISO registry. `fx.ts`, `markup.ts`, `schedule.ts`, `quote.ts`, `trade.ts`, `ratebook.ts`, `portfolio.ts`, `format.ts`, `errors.ts` build on those. `index.ts` is the barrel; each module is also a tree-shakeable subpath export (`safemoney/fx`, `safemoney/money`, …).
+`decimal.ts` is the exact-arithmetic core (`Scaled`, `parseScaled`, `rescale`, add/sub/mul/compare). `rounding.ts` has the 8 `RoundingMode`s and the `divideRound` primitive everything rounds through. `money.ts` is the `Money` value object. `currencies.ts` is the ISO registry. `fx.ts`, `markup.ts`, `schedule.ts`, `quote.ts`, `trade.ts`, `ratebook.ts`, `portfolio.ts`, `format.ts`, `errors.ts` build on those. `index.ts` is the barrel; each module is also a tree-shakeable subpath export (`@nambii/safemoney/fx`, `@nambii/safemoney/money`, …).
 
 ## Invariants you must preserve
 

@@ -1,7 +1,7 @@
 // FX dealing: best-execution across LPs, a marked-up quote, accepting a trade,
 // and a two-way (bid/ask) price.
 // Run with:  npm run build && node examples/fx-dealing.mjs
-import { FxQuote, FxRate, Markup, Money, RateBook } from "safemoney";
+import { FxQuote, FxRate, Markup, Money, RateBook } from "@nambii/safemoney";
 
 // A rate book holds competing liquidity-provider rates for a pair.
 const book = new RateBook([

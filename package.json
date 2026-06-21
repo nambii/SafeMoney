@@ -1,5 +1,5 @@
 {
-  "name": "safemoney",
+  "name": "@nambii/safemoney",
   "version": "0.1.0",
   "description": "Money-safe TypeScript primitives: currency-safe arithmetic with no floating-point errors, typed ISO 4217 currency codes, rounding policies, FX metadata, formatting and minor-unit conversion.",
   "keywords": [

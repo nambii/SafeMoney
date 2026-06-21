@@ -1,6 +1,6 @@
 // Money primitives: exact arithmetic, allocation, rounding, formatting.
 // Run with:  npm run build && node examples/money-basics.mjs
-import { Money, RoundingMode } from "safemoney";
+import { Money, RoundingMode } from "@nambii/safemoney";
 
 // Construction is exact — no binary floating-point error.
 const a = Money.of("0.10", "USD");

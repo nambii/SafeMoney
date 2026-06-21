@@ -5,7 +5,7 @@ with no floating-point error**, typed ISO 4217 currency codes, explicit rounding
 policies, FX metadata, localized formatting, and minor-unit conversion.
 
 ```ts
-import { Money, FxRate } from "safemoney";
+import { Money, FxRate } from "@nambii/safemoney";
 
 const price = Money.of("12.34", "AUD").add(Money.of("0.66", "AUD"));
 price.format({ locale: "en-AU" }); // "$13.00"
@@ -26,7 +26,7 @@ operation returns a new frozen value.
 ## Install
 
 ```sh
-npm install safemoney
+npm install @nambii/safemoney
 ```
 
 Ships dual ESM + CommonJS builds with full type declarations. Node ≥ 20 (where
@@ -34,8 +34,8 @@ Ships dual ESM + CommonJS builds with full type declarations. Node ≥ 20 (where
 dependencies.
 
 ```ts
-import { Money } from "safemoney";       // ESM / TypeScript
-const { Money } = require("safemoney");  // CommonJS
+import { Money } from "@nambii/safemoney";       // ESM / TypeScript
+const { Money } = require("@nambii/safemoney");  // CommonJS
 ```
 
 ## Core concepts
@@ -132,7 +132,7 @@ Every value-losing operation takes a `RoundingMode`. `round()` defaults to
 | `UNNECESSARY` | Assert exactness; throws if rounding would be needed |
 
 ```ts
-import { RoundingMode } from "safemoney";
+import { RoundingMode } from "@nambii/safemoney";
 Money.of("2.5", "USD").round(RoundingMode.HALF_EVEN, 0); // enum or the string "HALF_EVEN"
 ```
 
@@ -144,7 +144,7 @@ A rate is scoped to its currency pair and carries provenance metadata
 else throws:
 
 ```ts
-import { Money, FxRate } from "safemoney";
+import { Money, FxRate } from "@nambii/safemoney";
 
 const rate = FxRate.of("AUD", "USD", "0.6543", {
   source: "ECB",
@@ -176,7 +176,7 @@ direction. Build one from explicit bid/ask, or by widening a mid rate by pips,
 basis points, or an absolute amount.
 
 ```ts
-import { Money, FxRate, FxQuote } from "safemoney";
+import { Money, FxRate, FxQuote } from "@nambii/safemoney";
 
 const mid = FxRate.of("EUR", "USD", "1.1000", { source: "JPM", asOf: new Date() });
 const q = FxQuote.fromMid(mid, { pips: 2 });   // 1.0999 / 1.1001
@@ -215,7 +215,7 @@ r.isStale("5m"); r.age();                                 // freshness inspectio
 ### Multi-currency portfolios
 
 ```ts
-import { Portfolio } from "safemoney";
+import { Portfolio } from "@nambii/safemoney";
 
 const p = Portfolio.of(Money.of("100.00", "AUD"), Money.of("50.00", "USD"))
   .add(Money.of("25.00", "AUD"));
@@ -231,7 +231,7 @@ p.valuate("USD", board);   // total value in USD via an FxBoard
 triangulating through a pivot currency (default `USD`):
 
 ```ts
-import { FxBoard, FxRate, Money } from "safemoney";
+import { FxBoard, FxRate, Money } from "@nambii/safemoney";
 
 const board = new FxBoard([
   FxRate.of("AUD", "USD", "0.6543"),
@@ -251,7 +251,7 @@ and payout legs. The spread you earn is captured as `margin` and never lost to
 rounding.
 
 ```ts
-import { Money, FxRate, Markup, RateBook, Trade } from "safemoney";
+import { Money, FxRate, Markup, RateBook, Trade } from "@nambii/safemoney";
 
 // 1. Cost rates from multiple liquidity providers.
 const book = new RateBook([
@@ -294,7 +294,7 @@ amount is margined at its own tier, blended into one effective margin) or `flat`
 the resultant client rate, and the converted amount in one call.
 
 ```ts
-import { MarkupSchedule, Markup, Money, FxRate } from "safemoney";
+import { MarkupSchedule, Markup, Money, FxRate } from "@nambii/safemoney";
 
 const schedule = MarkupSchedule.of("AUD", [
   { upTo: "10000", markup: Markup.bps(50) }, //      0 – 10k @ 50 bps
@@ -362,7 +362,7 @@ All active ISO 4217 currencies are built in with their correct minor units
 custom or crypto assets at runtime:
 
 ```ts
-import { registerCurrency, Money, getCurrency, listCurrencies } from "safemoney";
+import { registerCurrency, Money, getCurrency, listCurrencies } from "@nambii/safemoney";
 
 registerCurrency({ code: "BTC", decimals: 8, name: "Bitcoin" });
 Money.ofMinor(150000000n, "BTC").getAmount(); // "1.50000000"

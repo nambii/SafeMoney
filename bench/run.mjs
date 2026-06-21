@@ -2,7 +2,7 @@
 // operation with a fixed iteration budget and reports ops/sec.
 //
 // Run with:  npm run bench
-import { FxQuote, FxRate, Markup, Money, RoundingMode } from "safemoney";
+import { FxQuote, FxRate, Markup, Money, RoundingMode } from "@nambii/safemoney";
 
 const ITERATIONS = 200_000;
 const WARMUP = 20_000;
