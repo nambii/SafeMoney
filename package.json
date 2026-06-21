@@ -205,11 +205,11 @@
   "devDependencies": {
     "@biomejs/biome": "^2.5.0",
     "@stryker-mutator/core": "^9.6.1",
-    "@types/node": "^20.14.0",
+    "@types/node": "^26.0.0",
     "c8": "^11.0.0",
     "fast-check": "^4.8.0",
     "typedoc": "^0.28.19",
-    "typescript": "^5.5.0"
+    "typescript": "^6.0.3"
   },
   "publishConfig": {
     "access": "public"
