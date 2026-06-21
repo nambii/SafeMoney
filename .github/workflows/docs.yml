@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
       # Enable GitHub Pages (and set its source to Actions) via the API so the
       # deploy step doesn't 404 when Pages hasn't been turned on in settings.
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
         with:
           enablement: true
       - uses: actions/setup-node@v4
