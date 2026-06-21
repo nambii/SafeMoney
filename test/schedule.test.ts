@@ -82,3 +82,34 @@ test("validates construction and inputs", () => {
     FxRateMismatchError,
   );
 });
+
+test("the final tier is open-ended even if it was given an upTo (regression)", () => {
+  // All tiers finite; amount exceeds the top threshold. The slice above the
+  // last threshold must use the last tier's margin, not be left un-margined.
+  const finiteTop = MarkupSchedule.of("AUD", [
+    { upTo: "100", markup: Markup.bps(50) },
+    { upTo: "200", markup: Markup.bps(30) }, // upTo ignored — this is the last tier
+  ]);
+  const openTop = MarkupSchedule.of("AUD", [
+    { upTo: "100", markup: Markup.bps(50) },
+    { markup: Markup.bps(30) },
+  ]);
+  // 300: 100@50 + 200@30 = 1.1/300 → 36.6667 bps (was 26.67 before the fix)
+  const amount = Money.of("300", "AUD");
+  assert.ok(Math.abs(finiteTop.effectiveMarkup(amount).asBps() - 36.6667) < 1e-3);
+  assert.equal(
+    finiteTop.effectiveMarkup(amount).asBps(),
+    openTop.effectiveMarkup(amount).asBps(),
+  );
+
+  // Flat mode already extended the last tier; confirm it still does.
+  const flat = MarkupSchedule.of(
+    "AUD",
+    [
+      { upTo: "100", markup: Markup.bps(50) },
+      { upTo: "200", markup: Markup.bps(30) },
+    ],
+    { mode: "flat" },
+  );
+  assert.equal(flat.effectiveMarkup(amount).asBps(), 30);
+});

@@ -10,8 +10,9 @@ import { RoundingMode } from "./rounding.js";
 /** A single margin band, applying up to `upTo` units of the base currency. */
 export interface MarkupTier {
   /**
-   * Upper bound of the band, in base currency (inclusive). Omit on the final
-   * tier to make it open-ended (applies to everything above the prior bound).
+   * Upper bound of the band, in base currency (inclusive). The final tier is
+   * always open-ended (it applies to everything above the prior bound), so any
+   * `upTo` given on the last tier is ignored.
    */
   readonly upTo?: Numeric;
   /**
@@ -118,11 +119,15 @@ export class MarkupSchedule {
       }
       previous = normalized;
     }
-    const resolved: ResolvedTier[] = tiers.map((t) =>
-      t.upTo !== undefined
-        ? { upTo: t.upTo, markup: resolveMarkup(t.markup) }
-        : { markup: resolveMarkup(t.markup) },
-    );
+    // The final tier is always open-ended: it covers everything above the prior
+    // threshold, so any `upTo` on it is ignored. This keeps progressive and flat
+    // modes consistent and prevents the slice above the top threshold from being
+    // left un-margined.
+    const lastIndex = tiers.length - 1;
+    const resolved: ResolvedTier[] = tiers.map((t, i) => {
+      const markup = resolveMarkup(t.markup);
+      return t.upTo !== undefined && i < lastIndex ? { upTo: t.upTo, markup } : { markup };
+    });
     return new MarkupSchedule(getCurrency(base), resolved, options.mode ?? "progressive");
   }
 
