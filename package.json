@@ -30,74 +30,144 @@
   "types": "./dist/esm/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/esm/index.d.ts",
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      }
     },
     "./money": {
-      "types": "./dist/esm/money.d.ts",
-      "import": "./dist/esm/money.js",
-      "require": "./dist/cjs/money.js"
+      "import": {
+        "types": "./dist/esm/money.d.ts",
+        "default": "./dist/esm/money.js"
+      },
+      "require": {
+        "types": "./dist/cjs/money.d.ts",
+        "default": "./dist/cjs/money.js"
+      }
     },
     "./fx": {
-      "types": "./dist/esm/fx.d.ts",
-      "import": "./dist/esm/fx.js",
-      "require": "./dist/cjs/fx.js"
+      "import": {
+        "types": "./dist/esm/fx.d.ts",
+        "default": "./dist/esm/fx.js"
+      },
+      "require": {
+        "types": "./dist/cjs/fx.d.ts",
+        "default": "./dist/cjs/fx.js"
+      }
     },
     "./quote": {
-      "types": "./dist/esm/quote.d.ts",
-      "import": "./dist/esm/quote.js",
-      "require": "./dist/cjs/quote.js"
+      "import": {
+        "types": "./dist/esm/quote.d.ts",
+        "default": "./dist/esm/quote.js"
+      },
+      "require": {
+        "types": "./dist/cjs/quote.d.ts",
+        "default": "./dist/cjs/quote.js"
+      }
     },
     "./trade": {
-      "types": "./dist/esm/trade.d.ts",
-      "import": "./dist/esm/trade.js",
-      "require": "./dist/cjs/trade.js"
+      "import": {
+        "types": "./dist/esm/trade.d.ts",
+        "default": "./dist/esm/trade.js"
+      },
+      "require": {
+        "types": "./dist/cjs/trade.d.ts",
+        "default": "./dist/cjs/trade.js"
+      }
     },
     "./markup": {
-      "types": "./dist/esm/markup.d.ts",
-      "import": "./dist/esm/markup.js",
-      "require": "./dist/cjs/markup.js"
+      "import": {
+        "types": "./dist/esm/markup.d.ts",
+        "default": "./dist/esm/markup.js"
+      },
+      "require": {
+        "types": "./dist/cjs/markup.d.ts",
+        "default": "./dist/cjs/markup.js"
+      }
     },
     "./rounding": {
-      "types": "./dist/esm/rounding.d.ts",
-      "import": "./dist/esm/rounding.js",
-      "require": "./dist/cjs/rounding.js"
+      "import": {
+        "types": "./dist/esm/rounding.d.ts",
+        "default": "./dist/esm/rounding.js"
+      },
+      "require": {
+        "types": "./dist/cjs/rounding.d.ts",
+        "default": "./dist/cjs/rounding.js"
+      }
     },
     "./currencies": {
-      "types": "./dist/esm/currencies.d.ts",
-      "import": "./dist/esm/currencies.js",
-      "require": "./dist/cjs/currencies.js"
+      "import": {
+        "types": "./dist/esm/currencies.d.ts",
+        "default": "./dist/esm/currencies.js"
+      },
+      "require": {
+        "types": "./dist/cjs/currencies.d.ts",
+        "default": "./dist/cjs/currencies.js"
+      }
     },
     "./decimal": {
-      "types": "./dist/esm/decimal.d.ts",
-      "import": "./dist/esm/decimal.js",
-      "require": "./dist/cjs/decimal.js"
+      "import": {
+        "types": "./dist/esm/decimal.d.ts",
+        "default": "./dist/esm/decimal.js"
+      },
+      "require": {
+        "types": "./dist/cjs/decimal.d.ts",
+        "default": "./dist/cjs/decimal.js"
+      }
     },
     "./errors": {
-      "types": "./dist/esm/errors.d.ts",
-      "import": "./dist/esm/errors.js",
-      "require": "./dist/cjs/errors.js"
+      "import": {
+        "types": "./dist/esm/errors.d.ts",
+        "default": "./dist/esm/errors.js"
+      },
+      "require": {
+        "types": "./dist/cjs/errors.d.ts",
+        "default": "./dist/cjs/errors.js"
+      }
     },
     "./format": {
-      "types": "./dist/esm/format.d.ts",
-      "import": "./dist/esm/format.js",
-      "require": "./dist/cjs/format.js"
+      "import": {
+        "types": "./dist/esm/format.d.ts",
+        "default": "./dist/esm/format.js"
+      },
+      "require": {
+        "types": "./dist/cjs/format.d.ts",
+        "default": "./dist/cjs/format.js"
+      }
     },
     "./portfolio": {
-      "types": "./dist/esm/portfolio.d.ts",
-      "import": "./dist/esm/portfolio.js",
-      "require": "./dist/cjs/portfolio.js"
+      "import": {
+        "types": "./dist/esm/portfolio.d.ts",
+        "default": "./dist/esm/portfolio.js"
+      },
+      "require": {
+        "types": "./dist/cjs/portfolio.d.ts",
+        "default": "./dist/cjs/portfolio.js"
+      }
     },
     "./ratebook": {
-      "types": "./dist/esm/ratebook.d.ts",
-      "import": "./dist/esm/ratebook.js",
-      "require": "./dist/cjs/ratebook.js"
+      "import": {
+        "types": "./dist/esm/ratebook.d.ts",
+        "default": "./dist/esm/ratebook.js"
+      },
+      "require": {
+        "types": "./dist/cjs/ratebook.d.ts",
+        "default": "./dist/cjs/ratebook.js"
+      }
     },
     "./schedule": {
-      "types": "./dist/esm/schedule.d.ts",
-      "import": "./dist/esm/schedule.js",
-      "require": "./dist/cjs/schedule.js"
+      "import": {
+        "types": "./dist/esm/schedule.d.ts",
+        "default": "./dist/esm/schedule.js"
+      },
+      "require": {
+        "types": "./dist/cjs/schedule.d.ts",
+        "default": "./dist/cjs/schedule.js"
+      }
     },
     "./package.json": "./package.json"
   },

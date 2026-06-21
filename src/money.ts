@@ -53,7 +53,10 @@ export class Money {
   private readonly value: Scaled;
 
   private constructor(value: Scaled, currency: CurrencyInfo) {
-    this.value = value;
+    // Freeze the value too, not just the wrapper, so the immutability guarantee
+    // holds at runtime even for callers that reach the internal Scaled via
+    // unsafeScaled().
+    this.value = Object.freeze(value);
     this.currency = currency;
     Object.freeze(this);
   }
@@ -220,6 +223,7 @@ export class Money {
    * digits (default: the currency's minor unit) using `mode`.
    */
   divide(divisor: Numeric, mode: RoundingMode, decimals: number = this.currency.decimals): Money {
+    assertNonNegativeScale(decimals, "divide");
     const d = parseScaled(divisor);
     if (d.units === 0n) {
       throw new RangeError("Division by zero");
@@ -256,6 +260,7 @@ export class Money {
     mode: RoundingMode = RoundingMode.HALF_EVEN,
     decimals: number = this.currency.decimals,
   ): Money {
+    assertNonNegativeScale(decimals, "round");
     return new Money(rescale(this.value, decimals, mode), this.currency);
   }
 
@@ -442,6 +447,16 @@ export class Money {
     if (this.currency.code !== other.currency.code) {
       throw new CurrencyMismatchError(this.currency.code, other.currency.code);
     }
+  }
+}
+
+// Guard the public `decimals` arguments to round()/divide(): a negative value
+// would reach pow10(negative) and throw an opaque bigint RangeError.
+function assertNonNegativeScale(decimals: number, where: string): void {
+  if (!Number.isInteger(decimals) || decimals < 0) {
+    throw new RangeError(
+      `${where}: decimals must be a non-negative integer, received: ${decimals}`,
+    );
   }
 }
 

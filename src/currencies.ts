@@ -188,9 +188,15 @@ for (const [code, info] of Object.entries(BUILT_IN)) {
   REGISTRY.set(code, { code, ...info });
 }
 
+// ISO 4217 codes are canonically uppercase; normalize so lookups are
+// case-insensitive ("usd" and "USD" resolve to the same currency).
+function normalizeCode(code: CurrencyCodeInput): string {
+  return String(code).toUpperCase();
+}
+
 /** Returns the metadata for a code, or throws {@link UnknownCurrencyError}. */
 export function getCurrency(code: CurrencyCodeInput): CurrencyInfo {
-  const info = REGISTRY.get(code);
+  const info = REGISTRY.get(normalizeCode(code));
   if (info === undefined) {
     throw new UnknownCurrencyError(String(code));
   }
@@ -199,7 +205,7 @@ export function getCurrency(code: CurrencyCodeInput): CurrencyInfo {
 
 /** Whether a code is registered (built-in or custom). */
 export function isCurrencyRegistered(code: string): boolean {
-  return REGISTRY.has(code);
+  return REGISTRY.has(normalizeCode(code));
 }
 
 /** Snapshot list of every registered currency, sorted by code. */
@@ -209,13 +215,19 @@ export function listCurrencies(): CurrencyInfo[] {
 
 /**
  * Register a custom currency (e.g. a crypto asset or an internal book currency).
- * Re-registering an existing code replaces it. Returns the stored info.
+ * Codes are normalized to uppercase. Re-registering a custom code replaces it,
+ * but overriding a built-in ISO 4217 currency (whose minor units are a
+ * correctness invariant) requires `{ override: true }` so it can't happen by
+ * accident. Returns the stored info.
  *
  * @example
  * registerCurrency({ code: "BTC", decimals: 8, name: "Bitcoin" });
  * registerCurrency({ code: "USDC", decimals: 6, name: "USD Coin" });
  */
-export function registerCurrency(info: CurrencyInfo): CurrencyInfo {
+export function registerCurrency(
+  info: CurrencyInfo,
+  options: { override?: boolean } = {},
+): CurrencyInfo {
   if (!/^[A-Za-z0-9]{2,12}$/.test(info.code)) {
     throw new RangeError(
       `Invalid currency code "${info.code}": expected 2–12 alphanumeric characters.`,
@@ -224,7 +236,13 @@ export function registerCurrency(info: CurrencyInfo): CurrencyInfo {
   if (!Number.isInteger(info.decimals) || info.decimals < 0 || info.decimals > 18) {
     throw new RangeError(`Invalid decimals for "${info.code}": expected an integer in [0, 18].`);
   }
-  const stored: CurrencyInfo = Object.freeze({ ...info });
-  REGISTRY.set(info.code, stored);
+  const code = normalizeCode(info.code);
+  if (!options.override && Object.hasOwn(BUILT_IN, code)) {
+    throw new RangeError(
+      `Refusing to override built-in ISO currency "${code}" without { override: true }.`,
+    );
+  }
+  const stored: CurrencyInfo = Object.freeze({ ...info, code });
+  REGISTRY.set(code, stored);
   return stored;
 }

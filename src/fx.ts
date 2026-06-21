@@ -324,7 +324,8 @@ export interface FxQuoteConversion extends FxConversion {
  *
  * {@link FxQuote.convert} picks the correct side automatically: bringing the
  * base currency hits the bid, bringing the quote currency hits the ask, so the
- * spread is earned in either direction.
+ * spread is earned in either direction. (For amounts at or above one minor
+ * unit; sub-minor "dust" can round up and is not meaningfully priceable.)
  *
  * @example
  * const mid = FxRate.of("EUR", "USD", "1.1000", { asOf: new Date() });

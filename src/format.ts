@@ -35,14 +35,17 @@ export function formatMoney(money: Money, options: FormatOptions = {}): string {
   try {
     // Default fraction digits to the currency's own minor unit so that custom
     // and crypto currencies (which Intl renders with a generic 2 dp) display at
-    // their true precision.
+    // their true precision. Clamp the minimum to the maximum so that an explicit
+    // `maximumFractionDigits` below the minor unit (e.g. "whole dollars") doesn't
+    // make Intl throw on min > max.
+    const max = rest.maximumFractionDigits ?? Math.max(decimals, rest.minimumFractionDigits ?? 0);
+    const min = Math.min(rest.minimumFractionDigits ?? decimals, max);
     const formatter = new Intl.NumberFormat(locale, {
       style: "currency",
       currency: code,
       currencyDisplay: rest.currencyDisplay ?? "symbol",
-      minimumFractionDigits: rest.minimumFractionDigits ?? decimals,
-      maximumFractionDigits:
-        rest.maximumFractionDigits ?? Math.max(decimals, rest.minimumFractionDigits ?? 0),
+      minimumFractionDigits: min,
+      maximumFractionDigits: max,
       ...(rest.useGrouping !== undefined ? { useGrouping: rest.useGrouping } : {}),
       ...(rest.signDisplay !== undefined ? { signDisplay: rest.signDisplay } : {}),
     });
@@ -66,7 +69,6 @@ export function normalizeLocaleNumber(text: string, locale?: string): string {
   const { group, decimal, digits } = localeNumberSymbols(locale);
 
   let s = text.normalize("NFKC").trim();
-  const negative = /[(]/.test(s) || /[-−]/.test(s);
 
   // Map locale-specific digits (e.g. Arabic-Indic) back to ASCII.
   if (digits.size > 0) {
@@ -76,12 +78,24 @@ export function normalizeLocaleNumber(text: string, locale?: string): string {
   if (group) s = s.split(group).join("");
   if (decimal && decimal !== ".") s = s.split(decimal).join(".");
 
-  // Drop everything that isn't a digit or decimal point (symbol, code, spaces).
-  const cleaned = s.replace(/[^0-9.]/g, "");
-  if (cleaned === "" || cleaned === ".") {
+  // Sign: accounting parentheses, or a minus sign before the first digit.
+  const firstDigit = s.search(/\d/);
+  const signRegion = firstDigit >= 0 ? s.slice(0, firstDigit) : s;
+  const negative = /[(]/.test(s) || /[-−]/.test(signRegion);
+
+  // Strip leading/trailing decoration (currency symbol, code, spaces, sign,
+  // parentheses) but keep the numeric core intact, then validate it. This
+  // rejects scientific notation ("1e3"), embedded letters ("1a2b3"), and
+  // multiple decimal points ("1.2.3") instead of silently producing a wrong
+  // amount — the dangerous failure mode for a money parser.
+  const core = s.replace(/^[^\d.]+/, "").replace(/[^\d.]+$/, "");
+  if (core === "" || core === ".") {
     throw new InvalidAmountError(`Could not parse a number from: "${text}"`);
   }
-  return (negative ? "-" : "") + cleaned;
+  if (!/^(?:\d+\.?\d*|\.\d+)$/.test(core)) {
+    throw new InvalidAmountError(`Ambiguous or malformed number: "${text}"`);
+  }
+  return (negative ? "-" : "") + core;
 }
 
 // Discover a locale's grouping/decimal separators and digit glyphs via Intl.
@@ -110,10 +124,12 @@ function localeNumberSymbols(locale?: string): {
 // Used for currencies Intl doesn't know about (custom/registered codes).
 function fallbackFormat(money: Money, options: FormatOptions): string {
   const decimals = money.currency.decimals;
+  const max = options.maximumFractionDigits ?? decimals;
+  const min = Math.min(options.minimumFractionDigits ?? decimals, max);
   const formatter = new Intl.NumberFormat(options.locale, {
     style: "decimal",
-    minimumFractionDigits: options.minimumFractionDigits ?? decimals,
-    maximumFractionDigits: options.maximumFractionDigits ?? decimals,
+    minimumFractionDigits: min,
+    maximumFractionDigits: max,
     ...(options.useGrouping !== undefined ? { useGrouping: options.useGrouping } : {}),
     ...(options.signDisplay !== undefined ? { signDisplay: options.signDisplay } : {}),
   });

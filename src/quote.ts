@@ -164,6 +164,13 @@ export class Quote {
     markup: Markup,
     options: QuoteOptions,
   ): Quote {
+    // A leg that rounds to zero is a degenerate, unpriceable deal (and would
+    // make clientRate divide by zero). Reject it with a clear domain error.
+    if (!sell.isPositive() || !buy.isPositive()) {
+      throw new RangeError(
+        "Quote amount is too small to price at this rate (a leg rounds to zero).",
+      );
+    }
     const createdAt = options.createdAt ?? new Date();
     const expiresAt =
       options.expiresAt ??

@@ -19,6 +19,11 @@ const DECIMAL_PATTERN = /^([+-]?)(\d+)(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/;
 
 const TEN = 10n;
 
+// Upper bound on the absolute fractional scale a parsed amount may carry. Well
+// beyond any real monetary or FX precision, but small enough that the largest
+// pow10() it can trigger stays cheap (guards against exponent-based DoS).
+const MAX_SCALE = 100_000;
+
 /** 10^n as a bigint, for non-negative integer n. */
 export function pow10(n: number): bigint {
   return TEN ** BigInt(n);
@@ -63,6 +68,12 @@ export function parseScaled(input: Numeric): Scaled {
 
   if (expPart !== undefined) {
     scale -= Number.parseInt(expPart, 10);
+  }
+  // Bound the magnitude so a pathological exponent (e.g. "1e1000000000") can't
+  // force a multi-gigabyte bigint allocation — a denial-of-service vector on
+  // untrusted input. The limit is far beyond any real monetary precision.
+  if (scale > MAX_SCALE || scale < -MAX_SCALE) {
+    throw new InvalidAmountError(`Exponent out of supported range in amount: "${input}"`);
   }
   if (scale < 0) {
     units *= pow10(-scale);

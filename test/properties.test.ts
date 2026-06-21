@@ -34,6 +34,17 @@ function decimal(units: bigint, scale: number): string {
 // A positive FX rate string with 6 dp.
 const arbRate = fc.bigInt({ min: 1n, max: 9_999_999n }).map((u) => decimal(u, 6));
 
+// Build a quote, returning undefined when the amount is dust (a leg rounds to
+// zero) — those inputs are unpriceable and out of scope for pricing invariants.
+function tryQuote<T>(make: () => T): T | undefined {
+  try {
+    return make();
+  } catch (e) {
+    if (e instanceof RangeError) return undefined;
+    throw e;
+  }
+}
+
 test("property: add is commutative and associative", () => {
   fc.assert(
     fc.property(arbCode, arbUnits, arbUnits, arbUnits, (code, a, b, c) => {
@@ -158,20 +169,20 @@ test("property: a quote never has negative margin and conserves at zero markup",
       (rate, baseUnits, bps) => {
         const cost = FxRate.of("AUD", "USD", rate);
         const sell = Money.ofMinor(baseUnits, "AUD");
-        const q = Quote.forSellAmount(sell, "USD", cost, { markup: Markup.bps(bps) });
-        const nonNegative = !q.margin.isNegative();
-        const buyPositiveOrZero = !q.buy.isNegative();
-        return nonNegative && buyPositiveOrZero;
+        const q = tryQuote(() =>
+          Quote.forSellAmount(sell, "USD", cost, { markup: Markup.bps(bps) }),
+        );
+        if (q === undefined) return true; // dust: leg rounds to zero, unpriceable — out of scope
+        return !q.margin.isNegative() && q.buy.isPositive();
       },
     ),
   );
   fc.assert(
     fc.property(arbRate, fc.bigInt({ min: 1n, max: 10n ** 10n }), (rate, baseUnits) => {
-      const q = Quote.forSellAmount(
-        Money.ofMinor(baseUnits, "AUD"),
-        "USD",
-        FxRate.of("AUD", "USD", rate),
+      const q = tryQuote(() =>
+        Quote.forSellAmount(Money.ofMinor(baseUnits, "AUD"), "USD", FxRate.of("AUD", "USD", rate)),
       );
+      if (q === undefined) return true; // dust: unpriceable — out of scope
       return q.margin.isZero(); // zero markup → zero margin
     }),
   );
