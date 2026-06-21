@@ -1,0 +1,15 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/index.ts"],
+  "out": "docs/api",
+  "tsconfig": "tsconfig.json",
+  "name": "SafeMoney",
+  "readme": "README.md",
+  "includeVersion": true,
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "sort": ["source-order"],
+  "navigationLinks": {
+    "GitHub": "https://github.com/nambii/SafeMoney"
+  }
+}
