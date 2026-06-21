@@ -93,10 +93,7 @@ test("the final tier is open-ended even if it was given an upTo (regression)", (
   // 300: 100@50 + 200@30 = 1.1/300 → 36.6667 bps (was 26.67 before the fix)
   const amount = Money.of("300", "AUD");
   assert.ok(Math.abs(finiteTop.effectiveMarkup(amount).asBps() - 36.6667) < 1e-3);
-  assert.equal(
-    finiteTop.effectiveMarkup(amount).asBps(),
-    openTop.effectiveMarkup(amount).asBps(),
-  );
+  assert.equal(finiteTop.effectiveMarkup(amount).asBps(), openTop.effectiveMarkup(amount).asBps());
 
   // Flat mode already extended the last tier; confirm it still does.
   const flat = MarkupSchedule.of(

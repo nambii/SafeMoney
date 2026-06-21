@@ -3,9 +3,9 @@
   "testRunner": "command",
   "commandRunner": { "command": "npm test" },
   "coverageAnalysis": "off",
-  "mutate": ["src/rounding.ts", "src/markup.ts", "src/decimal.ts"],
+  "mutate": ["src/**/*.ts", "!src/index.ts"],
   "concurrency": 2,
   "timeoutMS": 60000,
-  "reporters": ["clear-text", "progress"],
+  "reporters": ["clear-text", "progress", "json"],
   "thresholds": { "high": 90, "low": 75, "break": 75 }
 }

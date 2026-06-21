@@ -34,6 +34,71 @@
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.js"
     },
+    "./money": {
+      "types": "./dist/esm/money.d.ts",
+      "import": "./dist/esm/money.js",
+      "require": "./dist/cjs/money.js"
+    },
+    "./fx": {
+      "types": "./dist/esm/fx.d.ts",
+      "import": "./dist/esm/fx.js",
+      "require": "./dist/cjs/fx.js"
+    },
+    "./quote": {
+      "types": "./dist/esm/quote.d.ts",
+      "import": "./dist/esm/quote.js",
+      "require": "./dist/cjs/quote.js"
+    },
+    "./trade": {
+      "types": "./dist/esm/trade.d.ts",
+      "import": "./dist/esm/trade.js",
+      "require": "./dist/cjs/trade.js"
+    },
+    "./markup": {
+      "types": "./dist/esm/markup.d.ts",
+      "import": "./dist/esm/markup.js",
+      "require": "./dist/cjs/markup.js"
+    },
+    "./rounding": {
+      "types": "./dist/esm/rounding.d.ts",
+      "import": "./dist/esm/rounding.js",
+      "require": "./dist/cjs/rounding.js"
+    },
+    "./currencies": {
+      "types": "./dist/esm/currencies.d.ts",
+      "import": "./dist/esm/currencies.js",
+      "require": "./dist/cjs/currencies.js"
+    },
+    "./decimal": {
+      "types": "./dist/esm/decimal.d.ts",
+      "import": "./dist/esm/decimal.js",
+      "require": "./dist/cjs/decimal.js"
+    },
+    "./errors": {
+      "types": "./dist/esm/errors.d.ts",
+      "import": "./dist/esm/errors.js",
+      "require": "./dist/cjs/errors.js"
+    },
+    "./format": {
+      "types": "./dist/esm/format.d.ts",
+      "import": "./dist/esm/format.js",
+      "require": "./dist/cjs/format.js"
+    },
+    "./portfolio": {
+      "types": "./dist/esm/portfolio.d.ts",
+      "import": "./dist/esm/portfolio.js",
+      "require": "./dist/cjs/portfolio.js"
+    },
+    "./ratebook": {
+      "types": "./dist/esm/ratebook.d.ts",
+      "import": "./dist/esm/ratebook.js",
+      "require": "./dist/cjs/ratebook.js"
+    },
+    "./schedule": {
+      "types": "./dist/esm/schedule.d.ts",
+      "import": "./dist/esm/schedule.js",
+      "require": "./dist/cjs/schedule.js"
+    },
     "./package.json": "./package.json"
   },
   "sideEffects": false,
