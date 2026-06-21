@@ -199,6 +199,7 @@
     "bench": "npm run build && node bench/run.mjs",
     "docs": "typedoc",
     "reconcile": "node scripts/reconcile.mjs",
+    "audit": "npm audit --audit-level=high",
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
