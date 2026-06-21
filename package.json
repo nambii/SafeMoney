@@ -125,6 +125,7 @@
     "format": "biome format --write ./src ./test ./scripts",
     "check": "biome check ./src ./test ./scripts",
     "mutation": "stryker run",
+    "examples": "npm run build && node examples/money-basics.mjs && node examples/fx-dealing.mjs",
     "reconcile": "node scripts/reconcile.mjs",
     "prepublishOnly": "npm run build"
   },
