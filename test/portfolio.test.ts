@@ -1,6 +1,6 @@
-import { test } from "node:test";
 import assert from "node:assert/strict";
-import { Money, Portfolio, FxRate, FxBoard } from "../src/index.js";
+import { test } from "node:test";
+import { FxBoard, FxRate, Money, Portfolio } from "../src/index.js";
 
 test("sums same-currency balances and exposes them sorted", () => {
   const p = Portfolio.of(Money.of("100.00", "AUD"), Money.of("50.00", "USD")).add(

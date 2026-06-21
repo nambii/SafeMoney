@@ -1,4 +1,4 @@
-import { getCurrency, type CurrencyCodeInput } from "./currencies.js";
+import { type CurrencyCodeInput, getCurrency } from "./currencies.js";
 import type { ConvertOptions, FxBoard } from "./fx.js";
 import { Money, type MoneyJSON } from "./money.js";
 
@@ -118,6 +118,8 @@ export class Portfolio {
   toString(): string {
     return this.isEmpty()
       ? "Portfolio()"
-      : `Portfolio(${this.balances().map((m) => m.toString()).join(", ")})`;
+      : `Portfolio(${this.balances()
+          .map((m) => m.toString())
+          .join(", ")})`;
   }
 }

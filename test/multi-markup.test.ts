@@ -1,6 +1,6 @@
-import { test } from "node:test";
 import assert from "node:assert/strict";
-import { Money, FxRate, Markup, MarkupSchedule, Quote } from "../src/index.js";
+import { test } from "node:test";
+import { FxRate, Markup, MarkupSchedule, Money, Quote } from "../src/index.js";
 
 test("Markup.sum adds fractions (stacked fees)", () => {
   assert.equal(Markup.sum(Markup.bps(30), Markup.bps(20)).asBps(), 50);
@@ -44,13 +44,18 @@ test("Quote accepts multiple markups", () => {
 
 test("Markup.attribute splits margin across components, no money lost", () => {
   const shares = Markup.attribute(Money.of("5.00", "USD"), [Markup.bps(30), Markup.bps(20)]);
-  assert.deepEqual(shares.map((m) => m.toString()), ["3.00 USD", "2.00 USD"]);
+  assert.deepEqual(
+    shares.map((m) => m.toString()),
+    ["3.00 USD", "2.00 USD"],
+  );
 
   // Attribute a real quote's margin back to house vs partner.
   const cost = FxRate.of("AUD", "USD", "0.6543");
   const house = Markup.bps(30);
   const partner = Markup.bps(20);
-  const q = Quote.forSellAmount(Money.of("1000.00", "AUD"), "USD", cost, { markup: [house, partner] });
+  const q = Quote.forSellAmount(Money.of("1000.00", "AUD"), "USD", cost, {
+    markup: [house, partner],
+  });
   const [houseCut, partnerCut] = Markup.attribute(q.margin, [house, partner]);
   assert.equal(houseCut!.add(partnerCut!).toString(), q.margin.toString()); // 3.27 USD
   assert.deepEqual([houseCut!.toString(), partnerCut!.toString()], ["1.96 USD", "1.31 USD"]);

@@ -1,15 +1,15 @@
-import { test } from "node:test";
 import assert from "node:assert/strict";
+import { test } from "node:test";
 import {
-  Money,
   FxRate,
-  Markup,
-  Quote,
-  Trade,
-  RateBook,
-  Portfolio,
   FxRateMismatchError,
+  Markup,
+  Money,
+  type Portfolio,
+  Quote,
   QuoteExpiredError,
+  RateBook,
+  Trade,
 } from "../src/index.js";
 
 test("Markup constructors agree and validate", () => {
@@ -24,7 +24,9 @@ test("Markup constructors agree and validate", () => {
 
 test("forSellAmount: forward pair, with margin", () => {
   const cost = FxRate.of("AUD", "USD", "0.6543", { source: "JPM" });
-  const q = Quote.forSellAmount(Money.of("1000.00", "AUD"), "USD", cost, { markup: Markup.bps(50) });
+  const q = Quote.forSellAmount(Money.of("1000.00", "AUD"), "USD", cost, {
+    markup: Markup.bps(50),
+  });
   // 1000 × 0.6543 = 654.30 cost; × 0.995 = 651.0285 → 651.03 client
   assert.equal(q.sell.toString(), "1000.00 AUD");
   assert.equal(q.buy.toString(), "651.03 USD");
@@ -61,7 +63,10 @@ test("reverse pair (customer sells the quote currency)", () => {
 
 test("quote rejects a currency outside the cost-rate pair", () => {
   const cost = FxRate.of("AUD", "USD", "0.6543");
-  assert.throws(() => Quote.forSellAmount(Money.of("100", "EUR"), "USD", cost), FxRateMismatchError);
+  assert.throws(
+    () => Quote.forSellAmount(Money.of("100", "EUR"), "USD", cost),
+    FxRateMismatchError,
+  );
 });
 
 const createdAt = new Date("2026-06-20T00:00:00Z");
@@ -92,9 +97,24 @@ test("expiry and accept → Trade", () => {
 
 test("Trade.totalMargin aggregates revenue into a Portfolio", () => {
   const rate = FxRate.of("AUD", "USD", "0.6543");
-  const t1 = Trade.of({ payIn: Money.of("1", "AUD"), payOut: Money.of("1", "USD"), margin: Money.of("3.32", "USD"), rate });
-  const t2 = Trade.of({ payIn: Money.of("1", "AUD"), payOut: Money.of("1", "USD"), margin: Money.of("1.68", "USD"), rate });
-  const t3 = Trade.of({ payIn: Money.of("1", "USD"), payOut: Money.of("1", "AUD"), margin: Money.of("2.00", "AUD"), rate });
+  const t1 = Trade.of({
+    payIn: Money.of("1", "AUD"),
+    payOut: Money.of("1", "USD"),
+    margin: Money.of("3.32", "USD"),
+    rate,
+  });
+  const t2 = Trade.of({
+    payIn: Money.of("1", "AUD"),
+    payOut: Money.of("1", "USD"),
+    margin: Money.of("1.68", "USD"),
+    rate,
+  });
+  const t3 = Trade.of({
+    payIn: Money.of("1", "USD"),
+    payOut: Money.of("1", "AUD"),
+    margin: Money.of("2.00", "AUD"),
+    rate,
+  });
 
   const revenue: Portfolio = Trade.totalMargin([t1, t2, t3]);
   assert.equal(revenue.balance("USD").toString(), "5.00 USD");

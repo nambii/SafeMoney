@@ -1,11 +1,11 @@
-import { test } from "node:test";
 import assert from "node:assert/strict";
+import { test } from "node:test";
 import {
+  AllocationError,
+  CurrencyMismatchError,
   Money,
   RoundingMode,
-  CurrencyMismatchError,
   RoundingNecessaryError,
-  AllocationError,
 } from "../src/index.js";
 
 test("Money.of parses decimal strings exactly", () => {
@@ -42,10 +42,7 @@ test("toMinor rejects silent rounding but allows explicit mode", () => {
 });
 
 test("add and subtract require matching currencies", () => {
-  assert.throws(
-    () => Money.of("1", "USD").add(Money.of("1", "EUR")),
-    CurrencyMismatchError,
-  );
+  assert.throws(() => Money.of("1", "USD").add(Money.of("1", "EUR")), CurrencyMismatchError);
 });
 
 test("multiply is exact and grows scale", () => {
@@ -114,16 +111,25 @@ test("toString is unambiguous and non-localized", () => {
 
 test("allocate distributes every minor unit (no money lost)", () => {
   const parts = Money.of("0.05", "USD").allocate([1, 1, 1]);
-  assert.deepEqual(parts.map((p) => p.getAmount()), ["0.02", "0.02", "0.01"]);
+  assert.deepEqual(
+    parts.map((p) => p.getAmount()),
+    ["0.02", "0.02", "0.01"],
+  );
   const total = parts.reduce((sum, p) => sum.add(p), Money.zero("USD"));
   assert.ok(total.equals(Money.of("0.05", "USD")));
 });
 
 test("allocate respects weights and fractional weights", () => {
   const rent = Money.of("100.00", "USD").allocate([70, 30]);
-  assert.deepEqual(rent.map((p) => p.getAmount()), ["70.00", "30.00"]);
+  assert.deepEqual(
+    rent.map((p) => p.getAmount()),
+    ["70.00", "30.00"],
+  );
   const odd = Money.of("100.00", "USD").allocate([1, 1, 1]);
-  assert.deepEqual(odd.map((p) => p.getAmount()), ["33.34", "33.33", "33.33"]);
+  assert.deepEqual(
+    odd.map((p) => p.getAmount()),
+    ["33.34", "33.33", "33.33"],
+  );
 });
 
 test("allocate handles negative totals symmetrically", () => {
@@ -140,7 +146,10 @@ test("allocate validates weights", () => {
 
 test("split into equal parts", () => {
   const parts = Money.of("10.00", "USD").split(3);
-  assert.deepEqual(parts.map((p) => p.getAmount()), ["3.34", "3.33", "3.33"]);
+  assert.deepEqual(
+    parts.map((p) => p.getAmount()),
+    ["3.34", "3.33", "3.33"],
+  );
   assert.throws(() => Money.of("1", "USD").split(0), AllocationError);
 });
 

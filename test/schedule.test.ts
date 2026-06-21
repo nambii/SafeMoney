@@ -1,12 +1,6 @@
-import { test } from "node:test";
 import assert from "node:assert/strict";
-import {
-  Money,
-  FxRate,
-  Markup,
-  MarkupSchedule,
-  FxRateMismatchError,
-} from "../src/index.js";
+import { test } from "node:test";
+import { FxRate, FxRateMismatchError, Markup, MarkupSchedule, Money } from "../src/index.js";
 
 function schedule(mode?: "progressive" | "flat") {
   return MarkupSchedule.of(
@@ -26,7 +20,9 @@ test("progressive blends margins tax-bracket style", () => {
   // within the first tier → just that tier's margin
   assert.equal(schedule().effectiveMarkup(Money.of("5000", "AUD")).asBps(), 50);
   // 30k: 10k@50 + 20k@30 = (50+60)/30000 = 36.6667 bps
-  assert.ok(Math.abs(schedule().effectiveMarkup(Money.of("30000", "AUD")).asBps() - 36.6667) < 0.001);
+  assert.ok(
+    Math.abs(schedule().effectiveMarkup(Money.of("30000", "AUD")).asBps() - 36.6667) < 0.001,
+  );
 });
 
 test("flat mode uses the single tier the amount falls into", () => {

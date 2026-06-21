@@ -1,6 +1,6 @@
-import { test } from "node:test";
 import assert from "node:assert/strict";
-import { Money, formatMoney, registerCurrency } from "../src/index.js";
+import { test } from "node:test";
+import { formatMoney, Money, registerCurrency } from "../src/index.js";
 
 test("formats with locale and currency symbol", () => {
   // Use explicit locale so the assertion is deterministic across environments.
@@ -24,10 +24,7 @@ test("formatting preserves precision for large amounts", () => {
 
 test("negative amounts and signDisplay", () => {
   assert.equal(Money.of("-5", "USD").format({ locale: "en-US" }), "-$5.00");
-  assert.equal(
-    Money.of("5", "USD").format({ locale: "en-US", signDisplay: "always" }),
-    "+$5.00",
-  );
+  assert.equal(Money.of("5", "USD").format({ locale: "en-US", signDisplay: "always" }), "+$5.00");
 });
 
 test("fallback formatting for unknown-to-Intl currencies", () => {

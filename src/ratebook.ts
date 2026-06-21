@@ -1,7 +1,7 @@
-import { getCurrency, type CurrencyCodeInput } from "./currencies.js";
+import { type CurrencyCodeInput, getCurrency } from "./currencies.js";
 import { pow10 } from "./decimal.js";
 import { FxRateMismatchError } from "./errors.js";
-import { FxRate } from "./fx.js";
+import type { FxRate } from "./fx.js";
 import type { Money } from "./money.js";
 import { Quote, type QuoteOptions } from "./quote.js";
 
@@ -40,8 +40,7 @@ export class RateBook {
     const a = getCurrency(from).code;
     const b = getCurrency(to).code;
     return this.rates.filter(
-      (r) =>
-        (r.from.code === a && r.to.code === b) || (r.from.code === b && r.to.code === a),
+      (r) => (r.from.code === a && r.to.code === b) || (r.from.code === b && r.to.code === a),
     );
   }
 
@@ -83,11 +82,21 @@ export class RateBook {
 
   /** Quote a fixed pay-in amount using the best available rate. */
   quoteSell(sell: Money, buyCurrency: CurrencyCodeInput, options?: QuoteOptions): Quote {
-    return Quote.forSellAmount(sell, buyCurrency, this.best(sell.currency.code, buyCurrency), options);
+    return Quote.forSellAmount(
+      sell,
+      buyCurrency,
+      this.best(sell.currency.code, buyCurrency),
+      options,
+    );
   }
 
   /** Quote a fixed payout amount using the best available rate. */
   quoteBuy(buy: Money, sellCurrency: CurrencyCodeInput, options?: QuoteOptions): Quote {
-    return Quote.forBuyAmount(buy, sellCurrency, this.best(sellCurrency, buy.currency.code), options);
+    return Quote.forBuyAmount(
+      buy,
+      sellCurrency,
+      this.best(sellCurrency, buy.currency.code),
+      options,
+    );
   }
 }

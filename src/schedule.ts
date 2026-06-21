@@ -1,11 +1,11 @@
-import { getCurrency, type CurrencyCodeInput, type CurrencyInfo } from "./currencies.js";
-import { parseScaled, pow10, type Numeric } from "./decimal.js";
+import { type CurrencyCodeInput, type CurrencyInfo, getCurrency } from "./currencies.js";
+import { type Numeric, parseScaled, pow10 } from "./decimal.js";
 import { FxRateMismatchError } from "./errors.js";
 import { FxRate } from "./fx.js";
 import { Markup, type MarkupLike, resolveMarkup } from "./markup.js";
 import type { Money } from "./money.js";
 import { Quote } from "./quote.js";
-import { RoundingMode } from "./rounding.js";
+import type { RoundingMode } from "./rounding.js";
 
 /** A single margin band, applying up to `upTo` units of the base currency. */
 export interface MarkupTier {

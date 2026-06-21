@@ -1,4 +1,4 @@
-import { parseScaled, pow10, scaledToString, type Numeric } from "./decimal.js";
+import { type Numeric, parseScaled, pow10, scaledToString } from "./decimal.js";
 import { Money } from "./money.js";
 
 /**

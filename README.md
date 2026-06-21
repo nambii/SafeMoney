@@ -392,12 +392,24 @@ npm install
 npm run build      # dual ESM + CJS build into dist/
 npm test           # build + run the unit and property-based (fast-check) suite
 npm run typecheck  # strict type-check of src and tests
+npm run check      # Biome lint + format check
+npm run format     # apply Biome formatting
+npm run coverage   # tests with coverage thresholds (c8)
+npm run mutation   # mutation testing (Stryker) on the core math — slow
 npm run reconcile  # check pricing against recorded provider deals (needs a build)
 ```
 
-Property-based tests (`test/properties.test.ts`) assert invariants over hundreds
-of random inputs — e.g. allocation always conserves the total, margin is never
-negative, and amounts round-trip exactly.
+Quality gates:
+
+- **Property-based tests** (`test/properties.test.ts`) assert invariants over
+  hundreds of random inputs — allocation always conserves the total, margin is
+  never negative, amounts round-trip exactly, rounding stays within one unit.
+- **Coverage** (`c8`) is gated in CI (lines ≥ 85%, functions ≥ 90%, branches ≥
+  80%); current coverage is ~97% lines.
+- **Mutation testing** (`Stryker`) verifies the suite actually catches bugs.
+  It's slow (recompiles per mutant), so it runs on demand / weekly rather than
+  per-push, and breaks below a 75% score on the exact-math core (currently ~79%).
+- **Lint & format** via Biome.
 
 ```sh
 npm install

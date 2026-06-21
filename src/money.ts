@@ -1,27 +1,19 @@
-import {
-  getCurrency,
-  type CurrencyCodeInput,
-  type CurrencyInfo,
-} from "./currencies.js";
+import { type CurrencyCodeInput, type CurrencyInfo, getCurrency } from "./currencies.js";
 import {
   addScaled,
   compareScaled,
   multiplyScaled,
+  type Numeric,
   parseScaled,
   pow10,
   rescale,
+  type Scaled,
   scaledToString,
   signOf,
   subtractScaled,
-  type Numeric,
-  type Scaled,
 } from "./decimal.js";
-import {
-  AllocationError,
-  CurrencyMismatchError,
-  RoundingNecessaryError,
-} from "./errors.js";
-import { formatMoney, normalizeLocaleNumber, type FormatOptions } from "./format.js";
+import { AllocationError, CurrencyMismatchError, RoundingNecessaryError } from "./errors.js";
+import { type FormatOptions, formatMoney, normalizeLocaleNumber } from "./format.js";
 import { divideRound, RoundingMode } from "./rounding.js";
 
 /** Serialized form of a {@link Money}, safe to JSON.stringify and round-trip. */
@@ -227,11 +219,7 @@ export class Money {
    * Divide by a scalar divisor, rounding the result to `decimals` fractional
    * digits (default: the currency's minor unit) using `mode`.
    */
-  divide(
-    divisor: Numeric,
-    mode: RoundingMode,
-    decimals: number = this.currency.decimals,
-  ): Money {
+  divide(divisor: Numeric, mode: RoundingMode, decimals: number = this.currency.decimals): Money {
     const d = parseScaled(divisor);
     if (d.units === 0n) {
       throw new RangeError("Division by zero");
@@ -371,7 +359,9 @@ export class Money {
   }
 
   equals(other: Money): boolean {
-    return this.currency.code === other.currency.code && compareScaled(this.value, other.value) === 0;
+    return (
+      this.currency.code === other.currency.code && compareScaled(this.value, other.value) === 0
+    );
   }
 
   greaterThan(other: Money): boolean {

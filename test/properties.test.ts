@@ -1,13 +1,13 @@
 import { test } from "node:test";
 import fc from "fast-check";
 import {
-  Money,
   FxRate,
+  isRoundingMode,
   Markup,
   MarkupSchedule,
+  Money,
   Quote,
   RoundingMode,
-  isRoundingMode,
 } from "../src/index.js";
 import { divideRound } from "../src/rounding.js";
 
@@ -40,7 +40,10 @@ test("property: add is commutative and associative", () => {
       const [x, y, z] = [Money.ofMinor(a, code), Money.ofMinor(b, code), Money.ofMinor(c, code)];
       return (
         x.add(y).equals(y.add(x)) &&
-        x.add(y).add(z).equals(x.add(y.add(z)))
+        x
+          .add(y)
+          .add(z)
+          .equals(x.add(y.add(z)))
       );
     }),
   );
@@ -48,7 +51,10 @@ test("property: add is commutative and associative", () => {
 
 test("property: subtract inverts add; negate is an involution", () => {
   fc.assert(
-    fc.property(arbSameCcy, ([a, b]) => a.add(b).subtract(b).equals(a) && a.negate().negate().equals(a)),
+    fc.property(
+      arbSameCcy,
+      ([a, b]) => a.add(b).subtract(b).equals(a) && a.negate().negate().equals(a),
+    ),
   );
 });
 
@@ -122,17 +128,24 @@ test("property: Markup.sum/compound stay in [0, 100%); attribute conserves margi
     fc.property(arbComponents, (components) => {
       const sum = Markup.sum(...components);
       const compound = Markup.compound(...components);
-      return sum.asBps() >= 0 && sum.asBps() < 10000 && compound.asBps() >= 0 && compound.asBps() < 10000;
+      return (
+        sum.asBps() >= 0 && sum.asBps() < 10000 && compound.asBps() >= 0 && compound.asBps() < 10000
+      );
     }),
   );
   fc.assert(
-    fc.property(arbCode, fc.bigInt({ min: 1n, max: 10n ** 12n }), arbComponents, (code, units, components) => {
-      fc.pre(components.some((c) => c.asBps() > 0));
-      const margin = Money.ofMinor(units, code);
-      const shares = Markup.attribute(margin, components);
-      const total = shares.reduce((s, p) => s.add(p), Money.zero(code));
-      return total.equals(margin);
-    }),
+    fc.property(
+      arbCode,
+      fc.bigInt({ min: 1n, max: 10n ** 12n }),
+      arbComponents,
+      (code, units, components) => {
+        fc.pre(components.some((c) => c.asBps() > 0));
+        const margin = Money.ofMinor(units, code);
+        const shares = Markup.attribute(margin, components);
+        const total = shares.reduce((s, p) => s.add(p), Money.zero(code));
+        return total.equals(margin);
+      },
+    ),
   );
 });
 
@@ -154,7 +167,11 @@ test("property: a quote never has negative margin and conserves at zero markup",
   );
   fc.assert(
     fc.property(arbRate, fc.bigInt({ min: 1n, max: 10n ** 10n }), (rate, baseUnits) => {
-      const q = Quote.forSellAmount(Money.ofMinor(baseUnits, "AUD"), "USD", FxRate.of("AUD", "USD", rate));
+      const q = Quote.forSellAmount(
+        Money.ofMinor(baseUnits, "AUD"),
+        "USD",
+        FxRate.of("AUD", "USD", rate),
+      );
       return q.margin.isZero(); // zero markup → zero margin
     }),
   );

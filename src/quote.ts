@@ -1,9 +1,9 @@
-import { getCurrency, type CurrencyCodeInput, type CurrencyInfo } from "./currencies.js";
-import { pow10, scaledToString, type Scaled } from "./decimal.js";
+import { type CurrencyCodeInput, type CurrencyInfo, getCurrency } from "./currencies.js";
+import { pow10, type Scaled, scaledToString } from "./decimal.js";
 import { FxRateMismatchError, QuoteExpiredError } from "./errors.js";
-import { type Duration, FxRate, toMillis } from "./fx.js";
+import { type Duration, type FxRate, toMillis } from "./fx.js";
+import { type Markup, type MarkupLike, resolveMarkup } from "./markup.js";
 import { Money } from "./money.js";
-import { Markup, type MarkupLike, resolveMarkup } from "./markup.js";
 import { divideRound, RoundingMode } from "./rounding.js";
 import { Trade } from "./trade.js";
 
@@ -208,7 +208,9 @@ export class Quote {
   accept(options: { id?: string; executedAt?: Date } = {}): Trade {
     const executedAt = options.executedAt ?? new Date();
     if (this.isExpired(executedAt)) {
-      throw new QuoteExpiredError(`Quote ${this.id ?? "(anonymous)"} expired at ${this.expiresAt?.toISOString()}.`);
+      throw new QuoteExpiredError(
+        `Quote ${this.id ?? "(anonymous)"} expired at ${this.expiresAt?.toISOString()}.`,
+      );
     }
     return Trade.of({
       payIn: this.sell,
@@ -229,7 +231,11 @@ export class Quote {
       buy: this.buy.toJSON(),
       margin: this.margin.toJSON(),
       markupBps: this.markup.asBps(),
-      costRate: { from: this.costRate.from.code, to: this.costRate.to.code, rate: this.costRate.rate },
+      costRate: {
+        from: this.costRate.from.code,
+        to: this.costRate.to.code,
+        rate: this.costRate.rate,
+      },
       provider: this.provider,
       fixed: this.fixed,
       createdAt: this.createdAt.toISOString(),
@@ -248,9 +254,7 @@ function classify(costRate: FxRate, sellCode: string, buyCode: string): { forwar
   const to = costRate.to.code;
   if (sellCode === from && buyCode === to) return { forward: true };
   if (sellCode === to && buyCode === from) return { forward: false };
-  throw new FxRateMismatchError(
-    `Cost rate ${from}/${to} cannot price ${sellCode}->${buyCode}.`,
-  );
+  throw new FxRateMismatchError(`Cost rate ${from}/${to} cannot price ${sellCode}->${buyCode}.`);
 }
 
 // Build a Money of `currency` from the exact rational value P/Q, rounded to the

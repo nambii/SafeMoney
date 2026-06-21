@@ -33,11 +33,7 @@ import { RoundingNecessaryError } from "./errors.js";
  * This is the single primitive every rounding decision flows through, so the
  * behaviour of each {@link RoundingMode} is defined in exactly one place.
  */
-export function divideRound(
-  numerator: bigint,
-  denominator: bigint,
-  mode: RoundingMode,
-): bigint {
+export function divideRound(numerator: bigint, denominator: bigint, mode: RoundingMode): bigint {
   if (denominator <= 0n) {
     throw new RangeError("denominator must be a positive bigint");
   }

@@ -1,16 +1,12 @@
-import {
-  getCurrency,
-  type CurrencyCodeInput,
-  type CurrencyInfo,
-} from "./currencies.js";
+import { type CurrencyCodeInput, type CurrencyInfo, getCurrency } from "./currencies.js";
 import {
   multiplyScaled,
+  type Numeric,
   parseScaled,
   pow10,
   rescale,
-  scaledToString,
-  type Numeric,
   type Scaled,
+  scaledToString,
 } from "./decimal.js";
 import { FxRateMismatchError, MoneyError, StaleRateError } from "./errors.js";
 import { Money } from "./money.js";
@@ -182,10 +178,15 @@ export class FxRate {
     // 1 / rate, scaled to `decimals` places.
     const numerator = pow10(decimals + this.rateValue.scale);
     const units = divideRound(numerator, this.rateValue.units, mode);
-    return new FxRate(this.to, this.from, { units, scale: decimals }, {
-      ...this.metadata,
-      derivedFrom: `${this.from.code}/${this.to.code}`,
-    });
+    return new FxRate(
+      this.to,
+      this.from,
+      { units, scale: decimals },
+      {
+        ...this.metadata,
+        derivedFrom: `${this.from.code}/${this.to.code}`,
+      },
+    );
   }
 
   // ---------------------------------------------------------------------------

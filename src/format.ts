@@ -1,5 +1,5 @@
-import type { Money } from "./money.js";
 import { InvalidAmountError } from "./errors.js";
+import type { Money } from "./money.js";
 
 /** Options for {@link formatMoney} / {@link Money} display. */
 export interface FormatOptions {
@@ -41,7 +41,8 @@ export function formatMoney(money: Money, options: FormatOptions = {}): string {
       currency: code,
       currencyDisplay: rest.currencyDisplay ?? "symbol",
       minimumFractionDigits: rest.minimumFractionDigits ?? decimals,
-      maximumFractionDigits: rest.maximumFractionDigits ?? Math.max(decimals, rest.minimumFractionDigits ?? 0),
+      maximumFractionDigits:
+        rest.maximumFractionDigits ?? Math.max(decimals, rest.minimumFractionDigits ?? 0),
       ...(rest.useGrouping !== undefined ? { useGrouping: rest.useGrouping } : {}),
       ...(rest.signDisplay !== undefined ? { signDisplay: rest.signDisplay } : {}),
     });
