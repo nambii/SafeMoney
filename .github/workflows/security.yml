@@ -38,7 +38,7 @@ jobs:
       actions: read
       security-events: write
       contents: read
-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v2.3.8
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v2.5.1
 
   # OSV-Scanner full scan on push to main and on the weekly schedule: a complete
   # lockfile sweep, with findings published to the Security tab as code-scanning
